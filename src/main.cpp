@@ -3,6 +3,8 @@
 
 using namespace std;
 
+#define PI 3.1415926535897932384626
+
 extern "C"
 {
 #include "colorbuffer.h"
@@ -58,10 +60,23 @@ class line_3D
           @param point in this variable the line point will be returned
          */
 
-      bool intersects_triangle(triangle_3D triangle);
+      bool intersects_triangle(triangle_3D triangle, float &a, float &b, float &c);
 
         /**<
+          Checks whether the line intersects given triangle plus
+          computes the barycentric coordination od the intersection in
+          the triangle.
 
+          @param a in this variable the first coordination of the
+                 barycentric coordinations of the intersection will
+                 be returned
+          @param b in this variable the second coordination of the
+                 barycentric coordinations of the intersection will
+                 be returned
+          @param c in this variable the third coordination of the
+                 barycentric coordinations of the intersection will
+                 be returned
+          @return true if the triangle is intersected by the line
          */
   };
 
@@ -116,9 +131,13 @@ void line_3D::get_point(float t, point_3D &point)
     point.z = this->c2 + this->q2 * t;
   }
 
-bool line_3D::intersects_triangle(triangle_3D triangle)
+bool line_3D::intersects_triangle(triangle_3D triangle, float &a, float &b, float &c)
   {
     point_3D vector1,vector2,vector3,normal;
+
+    a = 0.0;
+    b = 0.0;
+    c = 0.0;
 
     substract_vectors(triangle.a,triangle.b,vector1);
     substract_vectors(triangle.a,triangle.c,vector2);
@@ -148,6 +167,9 @@ bool line_3D::intersects_triangle(triangle_3D triangle)
 
     /* t now contains parameter value for the intersection */
 
+    if (t < 0.0)
+      return false;
+
     point_3D intersection;
 
     this->get_point(t,intersection);  // intersection in 3D space
@@ -170,6 +192,39 @@ bool line_3D::intersects_triangle(triangle_3D triangle)
 
     if (dot_product(normal1,normal2) < 0 || dot_product(normal2,normal3) < 0)
       return false;
+
+    // now compute the barycentric coordination:
+
+    point_3D helper_vector1, helper_vector2;
+    float alpha, beta, gamma, alpha2, beta2, gamma2;
+
+    substract_vectors(triangle.a,triangle.b,helper_vector1);
+    substract_vectors(triangle.a,triangle.c,helper_vector2);
+    alpha = vectors_angle(helper_vector1,helper_vector2);
+
+    substract_vectors(triangle.b,triangle.a,helper_vector1);
+    substract_vectors(triangle.b,triangle.c,helper_vector2);
+    beta = vectors_angle(helper_vector1,helper_vector2);
+
+    substract_vectors(triangle.c,triangle.a,helper_vector1);
+    substract_vectors(triangle.c,triangle.b,helper_vector2);
+    gamma = vectors_angle(helper_vector1,helper_vector2);
+
+    alpha2 = vectors_angle(vector2,vector3);
+    beta2 = vectors_angle(vector1,vector3);
+    gamma2 = vectors_angle(vector1,vector2);
+
+    a = (alpha2 - alpha) / (PI / 2.0 - alpha);
+    b = (beta2 - beta) / (PI / 2.0 - beta);
+    c = (gamma2 - gamma) / (PI / 2.0 - gamma);
+
+    // now adjust the coords to sum up to 1.0:
+
+    float sum = a + b + c;
+
+    a /= sum;
+    b /= sum;
+    c /= sum;
 
     return true;
   }
@@ -199,8 +254,8 @@ int main(void)
     unsigned int width, height, i, j;
     t_color_buffer buffer;
 
-    width = 160;
-    height = 120;
+    width = 640;
+    height = 480;
 
     color_buffer_init(&buffer,width,height);
 
@@ -208,22 +263,29 @@ int main(void)
     p1.y = 0.0;
     p1.z = 0.0;
 
+    float a,b,c;
+
     for (j = 0; j < height; j++)
-      for (i = 0; i < width; i++)
-        {
-          cout << i << " " << j << endl;
+      {
+        for (i = 0; i < width; i++)
+          {
+            p2.x = ((i / ((float) width)) - 0.5);
+            p2.y = 0.5;
+            p2.z = ((j / ((float) height)) - 0.5) * 0.8;
 
-          p2.x = ((i / ((float) width)) - 0.5);
-          p2.y = 0.5;
-          p2.z = ((j / ((float) height)) - 0.5) * 0.8;
+            line_3D line(p1,p2);
 
-          line_3D line(p1,p2);
+            if (line.intersects_triangle(triangle,a,b,c))
+              {
+                color_buffer_set_pixel(&buffer,i,j,a * 255,b * 255,c * 255);
+                cout << a << " " << b << " " << c << " (" << (a + b + c) << ")" << endl;
+              }
+            else
+              color_buffer_set_pixel(&buffer,i,j,0,0,0);
+          }
 
-          if (line.intersects_triangle(triangle))
-            color_buffer_set_pixel(&buffer,i,j,0,255,0);
-          else
-            color_buffer_set_pixel(&buffer,i,j,0,0,0);
-        }
+        cout << "line " << j << endl;
+      }
 
     color_buffer_save_to_png(&buffer,"picture.png");
     color_buffer_destroy(&buffer);
