@@ -158,6 +158,22 @@ void line_3D::get_point(double t, point_3D &point)
     point.z = this->c2 + this->q2 * t;
   }
 
+double triangle_area(triangle_3D triangle)
+  {
+    double a_length, b_length, gamma;
+    point_3D a_vector, b_vector;
+
+    a_length = point_distance(triangle.a,triangle.b);
+    b_length = point_distance(triangle.a,triangle.c);
+
+    substract_vectors(triangle.b,triangle.a,a_vector);
+    substract_vectors(triangle.c,triangle.a,b_vector);
+
+    gamma = vectors_angle(a_vector,b_vector);
+
+    return 1/2.0 * a_length * b_length * sin(gamma);
+  }
+
 bool line_3D::intersects_triangle(triangle_3D triangle, double &a, double &b, double &c)
   {
     point_3D vector1,vector2,vector3,normal;
@@ -218,59 +234,27 @@ bool line_3D::intersects_triangle(triangle_3D triangle, double &a, double &b, do
     if (dot_product(normal1,normal2) < 0 || dot_product(normal2,normal3) < 0)
       return false;
 
-    // now compute the barycentric coordination:
+    // now compute the barycentric coordinates:
 
-    double dab, dac, dbc, da, db, dc;
-    double alpha, beta, gamma;
-    double alpha2, beta2, gamma2;
-    double helper;
-    point_3D helper_vector1, helper_vector2;
+    triangle_3D helper_triangle;
+    double total_area;
 
-    dab = point_distance(triangle.a,triangle.b); // side lengths
-    dac = point_distance(triangle.a,triangle.c);
-    dbc = point_distance(triangle.b,triangle.c);
+    total_area = triangle_area(triangle);
 
-    da = point_distance(triangle.a,intersection); // distance from sides to intersection
-    db = point_distance(triangle.b,intersection);
-    dc = point_distance(triangle.c,intersection);
+    helper_triangle.a = intersection;
+    helper_triangle.b = triangle.b;
+    helper_triangle.c = triangle.c;
+    a = triangle_area(helper_triangle) / total_area;
 
-    revert_vector(vector1); // A to intersection
-    revert_vector(vector2); // B to intersection
-    revert_vector(vector3); // C to intersection
+    helper_triangle.a = triangle.a;
+    helper_triangle.b = intersection;
+    helper_triangle.c = triangle.c;
+    b = triangle_area(helper_triangle) / total_area;
 
-    substract_vectors(triangle.c,triangle.a,helper_vector1);
-    substract_vectors(triangle.b,triangle.a,helper_vector2);
-    alpha = vectors_angle(helper_vector1,helper_vector2);     // angle CAB
-    alpha2 = vectors_angle(vector1,helper_vector1);           // angle CAI, I = intersection
-
-    helper = (alpha - alpha2) / (alpha);
-
-    a = 1.0 - da / (helper * dac + (1 - helper) * dab);
-
-    substract_vectors(triangle.a,triangle.b,helper_vector1);
-    substract_vectors(triangle.c,triangle.b,helper_vector2);
-    beta = vectors_angle(helper_vector1,helper_vector2);      // angle CBA
-    beta2 = vectors_angle(vector2,helper_vector1);            // angle ABI, I = intersection
-
-    helper = (beta - beta2) / (beta);
-
-    b = 1.0 - db / (helper * dab + (1 - helper) * dbc);
-
-    substract_vectors(triangle.a,triangle.c,helper_vector1);
-    substract_vectors(triangle.b,triangle.c,helper_vector2);
-    gamma = vectors_angle(helper_vector1,helper_vector2);     // angle ACB
-    gamma2 = vectors_angle(vector3,helper_vector2);           // angle BCI, I = intersection
-
-    helper = (gamma - gamma2) / (gamma);
-    c = 1.0 - dc / (helper * dbc + (1 - helper) * dac);
-
-    // now adjust the coords to sum up to 1.0:
-
-    double sum = a + b + c;
-
-    a /= sum;
-    b /= sum;
-    c /= sum;
+    helper_triangle.a = triangle.a;
+    helper_triangle.b = triangle.b;
+    helper_triangle.c = intersection;
+    c = triangle_area(helper_triangle) / total_area;
 
     return true;
   }
