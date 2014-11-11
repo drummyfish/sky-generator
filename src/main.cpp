@@ -94,9 +94,9 @@ void cross_product(point_3D vector1, point_3D vector2, point_3D &final_vector)
 
 void substract_vectors(point_3D vector1, point_3D vector2, point_3D &final_vector)
   {
-    final_vector.x = vector2.x - vector1.x;
-    final_vector.y = vector2.y - vector1.y;
-    final_vector.z = vector2.z - vector1.z;
+    final_vector.x = vector1.x - vector2.x;
+    final_vector.y = vector1.y - vector2.y;
+    final_vector.z = vector1.z - vector2.z;
   }
 
 double point_distance(point_3D a, point_3D b)
@@ -201,9 +201,9 @@ bool line_3D::intersects_triangle(triangle_3D triangle, double &a, double &b, do
 
     // vectors from the intersection to each triangle vertex:
 
-    substract_vectors(intersection,triangle.a,vector1);
-    substract_vectors(intersection,triangle.b,vector2);
-    substract_vectors(intersection,triangle.c,vector3);
+    substract_vectors(triangle.a,intersection,vector1);
+    substract_vectors(triangle.b,intersection,vector2);
+    substract_vectors(triangle.c,intersection,vector3);
 
     point_3D normal1, normal2, normal3;
 
@@ -240,27 +240,29 @@ bool line_3D::intersects_triangle(triangle_3D triangle, double &a, double &b, do
 
     substract_vectors(triangle.c,triangle.a,helper_vector1);
     substract_vectors(triangle.b,triangle.a,helper_vector2);
-    alpha = vectors_angle(helper_vector1,helper_vector2);
-    alpha2 = vectors_angle(vector1,helper_vector1);
+    alpha = vectors_angle(helper_vector1,helper_vector2);     // angle CAB
+    alpha2 = vectors_angle(vector1,helper_vector1);           // angle CAI, I = intersection
 
     helper = (alpha - alpha2) / (alpha);
-    a = 1.0 - da / (helper * dac + (1 - helper) * dac);
+
+    a = 1.0 - da / (helper * dac + (1 - helper) * dab);
 
     substract_vectors(triangle.a,triangle.b,helper_vector1);
     substract_vectors(triangle.c,triangle.b,helper_vector2);
-    beta = vectors_angle(helper_vector1,helper_vector2);
-    beta2 = vectors_angle(vector2,helper_vector1);
+    beta = vectors_angle(helper_vector1,helper_vector2);      // angle CBA
+    beta2 = vectors_angle(vector2,helper_vector1);            // angle ABI, I = intersection
 
     helper = (beta - beta2) / (beta);
-    b = 1.0 - db / (helper * dab + (1 - helper) * dab);
+
+    b = 1.0 - db / (helper * dab + (1 - helper) * dbc);
 
     substract_vectors(triangle.a,triangle.c,helper_vector1);
     substract_vectors(triangle.b,triangle.c,helper_vector2);
-    gamma = vectors_angle(helper_vector1,helper_vector2);
-    gamma2 = vectors_angle(vector3,helper_vector1);
+    gamma = vectors_angle(helper_vector1,helper_vector2);     // angle ACB
+    gamma2 = vectors_angle(vector3,helper_vector2);           // angle BCI, I = intersection
 
     helper = (gamma - gamma2) / (gamma);
-    c = 1.0 - dc / (helper * dac + (1 - helper) * dac);
+    c = 1.0 - dc / (helper * dbc + (1 - helper) * dac);
 
     // now adjust the coords to sum up to 1.0:
 
@@ -279,17 +281,17 @@ int main(void)
 
     triangle_3D triangle;
 
-    pt1.x = -1.0;
-    pt1.y = 0.517;
-    pt1.z = 0.349;
+    pt1.x = -0.5;
+    pt1.y = 4.0;
+    pt1.z = 0.0;
 
-    pt2.x = 0.585;
-    pt2.y = 3.095;
-    pt2.z = -1.098;
+    pt2.x = 2.5;
+    pt2.y = 10.0;
+    pt2.z = 0.0;
 
-    pt3.x = 0.062;
-    pt3.y = 5.095;
-    pt3.z = 1.0;
+    pt3.x = 0.0;
+    pt3.y = 4.0;
+    pt3.z = 0.5;
 
     triangle.a = pt1;
     triangle.b = pt2;
@@ -309,11 +311,13 @@ int main(void)
     p1.y = 0.0;
     p1.z = 0.0;
 
-    double a,b,c;
+    double aa,bb,cc;
 
     for (j = 0; j < height; j++)
+ //   for (j = 243; j <= 243; j++)
       {
         for (i = 0; i < width; i++)
+  //      for (i = 350; i <= 350; i++)
           {
             p2.x = ((i / ((double) width)) - 0.5);
             p2.y = 0.5;
@@ -321,19 +325,22 @@ int main(void)
 
             line_3D line(p1,p2);
 
-            if (line.intersects_triangle(triangle,a,b,c))
+            if (line.intersects_triangle(triangle,aa,bb,cc))
               {
                 //color_buffer_set_pixel(&buffer,i,j,255,255,0);
 
-                int coord_x = b * texture.width;
-                int coord_y = c * texture.width;
+                int coord_x = bb * texture.width;
+                int coord_y = cc * texture.width;
 
                 unsigned char r,g,b;
 
                 color_buffer_get_pixel(&texture,coord_x,coord_y,&r,&g,&b);
 
                 color_buffer_set_pixel(&buffer,i,j,r,g,b);
-                //color_buffer_set_pixel(&buffer,i,j,a < 0.5 ? 0 : 255,b < 0.5 ? 0 : 255,c < 0.5 ? 0 : 255);
+//cout << aa << " " << bb << " " << cc << endl;
+              //  color_buffer_set_pixel(&buffer,i,j,aa * 255,bb * 255,cc * 255);
+
+              //   color_buffer_set_pixel(&buffer,i,j,aa < 0.7 ? 0 : 255,bb < 0.7 ? 0 : 255,cc < 0.7 ? 0 : 255);
 
             /*    if (a > 0.9 || b > 0.9 || c > 0.9)
                   color_buffer_set_pixel(&buffer,i,j,a * 255,b * 255,c * 255);
