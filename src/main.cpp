@@ -85,6 +85,23 @@ void print_point(point_3D point)
     cout << "(" << point.x << ", " << point.y << ", " << point.z << ")" << endl;
   }
 
+double saturate(double value, double min, double max)
+  {
+    if (value < min)
+      return min;
+
+    if (value > max)
+      return max;
+
+    return value;
+  }
+
+double interpolate_linear(double value1, double value2, double ratio)
+  {
+    ratio = saturate(ratio,0.0,1.0);
+    return ratio * value1 + (1 - ratio) * value2;
+  }
+
 void cross_product(point_3D vector1, point_3D vector2, point_3D &final_vector)
   {
     final_vector.x = vector1.y * vector2.z - vector1.z * vector2.y;
@@ -259,11 +276,48 @@ bool line_3D::intersects_triangle(triangle_3D triangle, double &a, double &b, do
     return true;
   }
 
-int main(void)
+void draw_terrain(t_color_buffer *buffer, unsigned char r1, unsigned char g1, unsigned char b1,
+  unsigned char r2, unsigned char g2, unsigned char b2)
   {
-    point_3D p1,p2,p3,pt1,pt2,pt3;
+    int i, j, height;
+    double x, ratio;
+    unsigned char r, g, b;
 
+    for (i = 0; i < buffer->width; i++)
+      {
+        x = i / ((double) buffer->width - 1) * 2.5 + 0.3;
+
+        height = ((sin(x) + cos(5 * x) * x / 10.0)) * buffer->height * 0.1 + buffer->height * 0.15;
+
+        for (j = height; j >= 0; j--)
+          {
+            ratio = j / ((double) height);
+
+            r = interpolate_linear(r1,r2,ratio);
+            g = interpolate_linear(g1,g2,ratio);
+            b = interpolate_linear(b1,b2,ratio);
+
+            color_buffer_set_pixel(buffer,i,buffer->height - j - 1,r,g,b);
+          }
+      }
+  }
+
+void render_sky(t_color_buffer *buffer)
+
+  /**<
+   Renders the sky into given color buffer. The sky is rendered only
+   over white pixels (255,255,255).
+
+   @param buffer buffer to render the sky into, it must be initialised
+          and only white pixels will be redrawn
+   */
+
+  {
+    unsigned int i,j;
+    point_3D p1,p2,p3,pt1,pt2,pt3;
+    unsigned char r,g,b;
     triangle_3D triangle;
+    double barycentrix_a,barycentrix_b,barycentrix_c;
 
     pt1.x = -0.5;
     pt1.y = 4.0;
@@ -281,78 +335,59 @@ int main(void)
     triangle.b = pt2;
     triangle.c = pt3;
 
+    p1.x = 0.0;  // point to cast the rays from
+    p1.y = 0.0;
+    p1.z = 0.0;
+
+    for (j = 0; j < buffer->height; j++)
+      {
+        for (i = 0; i < buffer->width; i++)
+          {
+            color_buffer_get_pixel(buffer,i,j,&r,&g,&b);
+
+            if (r != 255 && g != 255 && b != 255)  // not white => don't render
+              continue;
+
+            p2.x = ((i / ((double) buffer->width)) - 0.5);
+            p2.y = 0.5;
+            p2.z = ((j / ((double) buffer->height)) - 0.5) * 0.8;
+
+            line_3D line(p1,p2);
+
+            if (line.intersects_triangle(triangle,barycentrix_a,barycentrix_b,barycentrix_c))
+              {
+               // int coord_x = bb * texture.width;
+               // int coord_y = cc * texture.width;
+
+                color_buffer_set_pixel(buffer,i,j,255,0,0);
+              }
+          }
+      }
+  }
+
+int main(void)
+  {
+
+
     unsigned int width, height, i, j;
     t_color_buffer buffer;
     t_color_buffer texture;
 
-    width = 640;
-    height = 480;
+    width = 1600;
+    height = 1200;
 
     color_buffer_init(&buffer,width,height);
     color_buffer_load_from_png(&texture,"water.png");
 
-    p1.x = 0.0;
-    p1.y = 0.0;
-    p1.z = 0.0;
-
     double aa,bb,cc;
 
-    for (j = 0; j < height; j++)
- //   for (j = 243; j <= 243; j++)
-      {
-        for (i = 0; i < width; i++)
-  //      for (i = 350; i <= 350; i++)
-          {
-            p2.x = ((i / ((double) width)) - 0.5);
-            p2.y = 0.5;
-            p2.z = ((j / ((double) height)) - 0.5) * 0.8;
+    draw_terrain(&buffer,150,250,50,50,150,10);
 
-            line_3D line(p1,p2);
-
-            if (line.intersects_triangle(triangle,aa,bb,cc))
-              {
-                //color_buffer_set_pixel(&buffer,i,j,255,255,0);
-
-                int coord_x = bb * texture.width;
-                int coord_y = cc * texture.width;
-
-                unsigned char r,g,b;
-
-                color_buffer_get_pixel(&texture,coord_x,coord_y,&r,&g,&b);
-
-                color_buffer_set_pixel(&buffer,i,j,r,g,b);
-//cout << aa << " " << bb << " " << cc << endl;
-              //  color_buffer_set_pixel(&buffer,i,j,aa * 255,bb * 255,cc * 255);
-
-              //   color_buffer_set_pixel(&buffer,i,j,aa < 0.7 ? 0 : 255,bb < 0.7 ? 0 : 255,cc < 0.7 ? 0 : 255);
-
-            /*    if (a > 0.9 || b > 0.9 || c > 0.9)
-                  color_buffer_set_pixel(&buffer,i,j,a * 255,b * 255,c * 255);
-                else
-                 color_buffer_set_pixel(&buffer,i,j,0,0,0);
-*/
-              }
-            else
-              color_buffer_set_pixel(&buffer,i,j,0,0,0);
-          }
-
-        cout << "line " << j << endl;
-      }
+    render_sky(&buffer);
 
     color_buffer_save_to_png(&buffer,"picture.png");
     color_buffer_destroy(&buffer);
 
-
-    point_3D f,g;
-
-    f.x = 0.0;
-    f.y = 0.0;
-    f.z = 0.0;
-
-
-    g.x = 1.0;
-    g.y = 1.0;
-    g.z = 1.0;
 
     return 0;
   }
