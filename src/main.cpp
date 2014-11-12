@@ -1,5 +1,6 @@
 #include <iostream>
 #include <math.h>
+#include <vector>
 
 using namespace std;
 
@@ -19,9 +20,13 @@ typedef struct         /**< point, also a vector */
 
 typedef struct
   {
-    point_3D a;
+    point_3D a;        /**< position coordinates */
     point_3D b;
     point_3D c;
+
+    point_3D a_t;      /**< texturing coordinates */
+    point_3D b_t;
+    point_3D c_t;
   } triangle_3D;
 
 class line_3D
@@ -313,27 +318,63 @@ void render_sky(t_color_buffer *buffer)
    */
 
   {
-    unsigned int i,j;
-    point_3D p1,p2,p3,pt1,pt2,pt3;
+    unsigned int i,j,k;
+    point_3D p1,p2,p3,p4,pt1,pt2,pt3,pt4;
+    double u,v,w;
     unsigned char r,g,b;
     triangle_3D triangle;
-    double barycentrix_a,barycentrix_b,barycentrix_c;
+    double aspect_ratio;
+    double barycentric_a,barycentric_b,barycentric_c;
+    vector<triangle_3D> triangles;
+    t_color_buffer texture;
 
-    pt1.x = -0.5;
-    pt1.y = 4.0;
-    pt1.z = 0.0;
+    color_buffer_load_from_png(&texture,"grass.png");
+    aspect_ratio = buffer->height / ((double) buffer->width);
 
-    pt2.x = 2.5;
-    pt2.y = 10.0;
-    pt2.z = 0.0;
+    p1.x = -14;
+    p1.y = 2;
+    p1.z = -2;
 
-    pt3.x = 0.0;
-    pt3.y = 4.0;
-    pt3.z = 0.5;
+    p2.x = 14;
+    p2.y = 2;
+    p2.z = -2;
 
-    triangle.a = pt1;
-    triangle.b = pt2;
-    triangle.c = pt3;
+    p3.x = -10;
+    p3.y = 10;
+    p3.z = 5;
+
+    p4.x = 10;
+    p4.y = 10;
+    p4.z = 5;
+
+    pt1.x = 0;
+    pt1.y = 0;
+
+    pt2.x = 1;
+    pt2.y = 0;
+
+    pt3.x = 0;
+    pt3.y = 1;
+
+    pt4.x = 1;
+    pt4.y = 1;
+
+    triangle.a = p1;
+    triangle.b = p2;
+    triangle.c = p3;
+    triangle.a_t = pt1;
+    triangle.b_t = pt2;
+    triangle.c_t = pt3;
+    triangles.push_back(triangle);
+
+    triangle.a = p2;
+    triangle.b = p3;
+    triangle.c = p4;
+    triangle.a_t = pt2;
+    triangle.b_t = pt3;
+    triangle.c_t = pt4;
+    triangles.push_back(triangle);
+
 
     p1.x = 0.0;  // point to cast the rays from
     p1.y = 0.0;
@@ -350,19 +391,28 @@ void render_sky(t_color_buffer *buffer)
 
             p2.x = ((i / ((double) buffer->width)) - 0.5);
             p2.y = 0.5;
-            p2.z = ((j / ((double) buffer->height)) - 0.5) * 0.8;
+            p2.z = ((j / ((double) buffer->height)) - 0.5) * aspect_ratio;
 
             line_3D line(p1,p2);
 
-            if (line.intersects_triangle(triangle,barycentrix_a,barycentrix_b,barycentrix_c))
-              {
-               // int coord_x = bb * texture.width;
-               // int coord_y = cc * texture.width;
+            for (k = 0; k < triangles.size(); k++)
+              if (line.intersects_triangle(triangles[k],barycentric_a,barycentric_b,barycentric_c))
+                {
+                 // int coord_x = bb * texture.width;
+                 // int coord_y = cc * texture.width;
 
-                color_buffer_set_pixel(buffer,i,j,255,0,0);
-              }
+                  u = barycentric_a * triangles[k].a_t.x + barycentric_b * triangles[k].b_t.x + barycentric_c * triangles[k].c_t.x;
+                  v = barycentric_a * triangles[k].a_t.y + barycentric_b * triangles[k].b_t.y + barycentric_c * triangles[k].c_t.y;
+                  w = barycentric_a * triangles[k].a_t.z + barycentric_b * triangles[k].b_t.z + barycentric_c * triangles[k].c_t.z;
+
+                  color_buffer_get_pixel(&texture,u * texture.width,v * texture.height,&r,&g,&b);;
+
+                  color_buffer_set_pixel(buffer,i,j,r,g,b);
+                }
           }
       }
+
+    color_buffer_destroy(&texture);
   }
 
 int main(void)
