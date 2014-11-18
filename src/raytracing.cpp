@@ -111,6 +111,13 @@ double triangle_area(triangle_3D triangle)
     return 1/2.0 * a_length * b_length * sin(gamma);
   }
 
+void get_triangle_uvw(triangle_3D triangle, double barycentric_a, double barycentric_b, double barycentric_c, double &u, double &v, double &w)
+  {
+    u = barycentric_a * triangle.a_t.x + barycentric_b * triangle.b_t.x + barycentric_c * triangle.c_t.x;
+    v = barycentric_a * triangle.a_t.y + barycentric_b * triangle.b_t.y + barycentric_c * triangle.c_t.y;
+    w = barycentric_a * triangle.a_t.z + barycentric_b * triangle.b_t.z + barycentric_c * triangle.c_t.z;
+  }
+
 bool line_3D::intersects_triangle(triangle_3D triangle, double &a, double &b, double &c)
   {
     point_3D vector1,vector2,vector3,normal;

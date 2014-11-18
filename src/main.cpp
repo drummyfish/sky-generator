@@ -55,37 +55,18 @@ void render_sky(t_color_buffer *buffer)
     triangle_3D triangle;
     double aspect_ratio;
     double barycentric_a,barycentric_b,barycentric_c;
-    vector<triangle_3D> triangles;
+    vector<triangle_3D> sky_plane, sky_plane2;         // triangles that make up the lower/upper sky plane
 
     aspect_ratio = buffer->height / ((double) buffer->width);
 
-    p1.x = -14;
-    p1.y = 2;
-    p1.z = -2;
-
-    p2.x = 14;
-    p2.y = 2;
-    p2.z = -2;
-
-    p3.x = -10;
-    p3.y = 10;
-    p3.z = 5;
-
-    p4.x = 10;
-    p4.y = 10;
-    p4.z = 5;
-
-    pt1.x = 0;
-    pt1.y = 0;
-
-    pt2.x = 1;
-    pt2.y = 0;
-
-    pt3.x = 0;
-    pt3.y = 1;
-
-    pt4.x = 1;
-    pt4.y = 1;
+    p1.x = -14;   p1.y = 2;   p1.z = -2;    // lower sky plane geometry
+    p2.x = 14;    p2.y = 2;   p2.z = -2;
+    p3.x = -10;   p3.y = 10;  p3.z = 5;
+    p4.x = 10;    p4.y = 10;  p4.z = 5;
+    pt1.x = 0;    pt1.y = 0;                // texture coordinates
+    pt2.x = 1;    pt2.y = 0;
+    pt3.x = 0;    pt3.y = 1;
+    pt4.x = 1;    pt4.y = 1;
 
     triangle.a = p1;
     triangle.b = p2;
@@ -93,7 +74,7 @@ void render_sky(t_color_buffer *buffer)
     triangle.a_t = pt1;
     triangle.b_t = pt2;
     triangle.c_t = pt3;
-    triangles.push_back(triangle);
+    sky_plane.push_back(triangle);
 
     triangle.a = p2;
     triangle.b = p3;
@@ -101,8 +82,28 @@ void render_sky(t_color_buffer *buffer)
     triangle.a_t = pt2;
     triangle.b_t = pt3;
     triangle.c_t = pt4;
-    triangles.push_back(triangle);
+    sky_plane.push_back(triangle);
 
+    p1.x = -14;   p1.y = -1;   p1.z = -2;    // upper sky plane geometry
+    p2.x = 14;    p2.y = -1;   p2.z = -2;
+    p3.x = -10;   p3.y = 10;   p3.z = 5;
+    p4.x = 10;    p4.y = 10;   p4.z = 5;
+
+    triangle.a = p1;
+    triangle.b = p2;
+    triangle.c = p3;
+    triangle.a_t = pt1;
+    triangle.b_t = pt2;
+    triangle.c_t = pt3;
+    sky_plane2.push_back(triangle);
+
+    triangle.a = p2;
+    triangle.b = p3;
+    triangle.c = p4;
+    triangle.a_t = pt2;
+    triangle.b_t = pt3;
+    triangle.c_t = pt4;
+    sky_plane2.push_back(triangle);
 
     p1.x = 0.0;  // point to cast the rays from
     p1.y = 0.0;
@@ -110,6 +111,13 @@ void render_sky(t_color_buffer *buffer)
 
     for (j = 0; j < buffer->height; j++)
       {
+        unsigned char back_r, back_g, back_b;
+        double ratio = j / ((double) buffer->height);
+
+        back_r = interpolate_linear(180,90,ratio);
+        back_g = interpolate_linear(150,100,ratio);
+        back_b = interpolate_linear(255,200,ratio);
+
         for (i = 0; i < buffer->width; i++)
           {
             color_buffer_get_pixel(buffer,i,j,&r,&g,&b);
@@ -123,21 +131,33 @@ void render_sky(t_color_buffer *buffer)
 
             line_3D line(p1,p2);
 
-            for (k = 0; k < triangles.size(); k++)
-              if (line.intersects_triangle(triangles[k],barycentric_a,barycentric_b,barycentric_c))
+            color_buffer_set_pixel(buffer,i,j,back_r,back_g,back_b);    // background gradient
+
+            for (k = 0; k < sky_plane2.size(); k++)                     // upper sky plane
+              if (line.intersects_triangle(sky_plane2[k],barycentric_a,barycentric_b,barycentric_c))
                 {
-                  u = barycentric_a * triangles[k].a_t.x + barycentric_b * triangles[k].b_t.x + barycentric_c * triangles[k].c_t.x;
-                  v = barycentric_a * triangles[k].a_t.y + barycentric_b * triangles[k].b_t.y + barycentric_c * triangles[k].c_t.y;
-                  w = barycentric_a * triangles[k].a_t.z + barycentric_b * triangles[k].b_t.z + barycentric_c * triangles[k].c_t.z;
+                  get_triangle_uvw(sky_plane2[k],barycentric_a,barycentric_b,barycentric_c,u,v,w);
 
+                  float f = perlin(u * WIDTH / 2 + WIDTH / 2, v * WIDTH / 2 + WIDTH / 2, 100);
+                  f = saturate(f,0.0,1.0);
 
-                  float f = perlin(u * WIDTH, v * WIDTH, 0);
-                  f = (f > 1.0) ? 1.0 : f; // saturace
-                  color_buffer_set_pixel(buffer,i,j,f*255,f*255,f*255);
+                  if (f >= 0.75)
+                    color_buffer_set_pixel(buffer,i,j,f*255,f*255,f*255);
+                }
+
+            for (k = 0; k < sky_plane.size(); k++)                      // lower sky plane
+              if (line.intersects_triangle(sky_plane[k],barycentric_a,barycentric_b,barycentric_c))
+                {
+                  get_triangle_uvw(sky_plane[k],barycentric_a,barycentric_b,barycentric_c,u,v,w);
+
+                  float f = perlin(u * WIDTH / 2 + WIDTH / 2, v * WIDTH / 2 + WIDTH / 2, 10);
+                  f = saturate(f,0.0,1.0);
+
+                  if (f >= 0.78)
+                    color_buffer_set_pixel(buffer,i,j,interpolate_linear(100,255,f),interpolate_linear(100,255,f),interpolate_linear(50,100,f));
                 }
           }
       }
-
   }
 
 int main(void)

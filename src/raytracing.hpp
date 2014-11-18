@@ -99,5 +99,6 @@ void normalize(point_3D &vector);
 double vectors_angle(point_3D vector1, point_3D vector2);
 void revert_vector(point_3D &vector);
 double triangle_area(triangle_3D triangle);
+void get_triangle_uvw(triangle_3D triangle, double barycentric_a, double barycentric_b, double barycentric_c, double &u, double &v, double &w);
 
 #endif
