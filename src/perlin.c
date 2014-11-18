@@ -2,12 +2,8 @@
  * Perlin Noise
  */
 
+#include "perlin.h"
 #include <stdio.h>
-
-#define WIDTH 128
-
-#define OCTAVES 8
-
 
 float perlin(int x, int y, int z);
 
@@ -81,20 +77,4 @@ float perlin(int x, int y, int z)
     }
 
     return sum_noise;
-}
-
-int main(int argc, char *argv[])
-{
-
-    // x, y, z souradnice
-    for(int t = 0; t < WIDTH; t += 1) {
-        for(int y = 0; y < WIDTH; y += 1) {
-            for(int x = 0; x < WIDTH; x += 1) {
-                printf("%f ", perlin(x, y, t));
-            }
-            putchar('\n');
-        }
-    }
-
-    return 0;
 }
