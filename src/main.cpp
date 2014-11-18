@@ -8,6 +8,7 @@ using namespace std;
 
 extern "C"
 {
+#include "perlin.h"
 #include "colorbuffer.h"
 }
 
@@ -417,9 +418,7 @@ void render_sky(t_color_buffer *buffer)
 
 int main(void)
   {
-
-
-    unsigned int width, height, i, j;
+    unsigned int width, height, i, j, k;
     t_color_buffer buffer;
     t_color_buffer texture;
 
@@ -437,7 +436,6 @@ int main(void)
 
     color_buffer_save_to_png(&buffer,"picture.png");
     color_buffer_destroy(&buffer);
-
 
     return 0;
   }
