@@ -327,9 +327,7 @@ void render_sky(t_color_buffer *buffer)
     double aspect_ratio;
     double barycentric_a,barycentric_b,barycentric_c;
     vector<triangle_3D> triangles;
-    t_color_buffer texture;
 
-    color_buffer_load_from_png(&texture,"grass.png");
     aspect_ratio = buffer->height / ((double) buffer->width);
 
     p1.x = -14;
@@ -399,36 +397,29 @@ void render_sky(t_color_buffer *buffer)
             for (k = 0; k < triangles.size(); k++)
               if (line.intersects_triangle(triangles[k],barycentric_a,barycentric_b,barycentric_c))
                 {
-                 // int coord_x = bb * texture.width;
-                 // int coord_y = cc * texture.width;
-
                   u = barycentric_a * triangles[k].a_t.x + barycentric_b * triangles[k].b_t.x + barycentric_c * triangles[k].c_t.x;
                   v = barycentric_a * triangles[k].a_t.y + barycentric_b * triangles[k].b_t.y + barycentric_c * triangles[k].c_t.y;
                   w = barycentric_a * triangles[k].a_t.z + barycentric_b * triangles[k].b_t.z + barycentric_c * triangles[k].c_t.z;
 
-                  color_buffer_get_pixel(&texture,u * texture.width,v * texture.height,&r,&g,&b);;
 
-                  color_buffer_set_pixel(buffer,i,j,r,g,b);
+                  float f = perlin(u * WIDTH, v * WIDTH, 0);
+                  f = (f > 1.0) ? 1.0 : f; // saturace
+                  color_buffer_set_pixel(buffer,i,j,f*255,f*255,f*255);
                 }
           }
       }
 
-    color_buffer_destroy(&texture);
   }
 
 int main(void)
   {
-    unsigned int width, height, i, j, k;
+    unsigned int width, height;
     t_color_buffer buffer;
-    t_color_buffer texture;
 
-    width = 1600;
-    height = 1200;
+    width = 1600/2;
+    height = 1200/2;
 
     color_buffer_init(&buffer,width,height);
-    color_buffer_load_from_png(&texture,"water.png");
-
-    double aa,bb,cc;
 
     draw_terrain(&buffer,150,250,50,50,150,10);
 
