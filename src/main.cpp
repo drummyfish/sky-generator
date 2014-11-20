@@ -1,6 +1,7 @@
 #include <iostream>
 #include <math.h>
 #include <vector>
+#include <stdlib.h>
 #include "raytracing.hpp"
 
 using namespace std;
@@ -116,6 +117,45 @@ void make_background_gradient(unsigned char background_color_from[3],unsigned ch
     background_color_to[2] = (unsigned char) interpolate_linear(gradient_points[1][interpolate_from][2],gradient_points[1][interpolate_to][2],ratio);
   }
 
+void draw_stars(t_color_buffer *buffer, unsigned int number_of_stars)
+  /**<
+   Draws yellow stars on black background into given color buffer.
+
+   @param buffer buffer that the stars will be drawn into, must be
+          initialised
+   @param number of stars number of stras
+   */
+
+  {
+    unsigned int i,j,x,y;
+    unsigned char r,g,b;
+
+    srand(10);
+
+    for (j = 0; j < buffer->height; j++)
+      for (i = 0; i < buffer->width; i++)
+        color_buffer_set_pixel(buffer,i,j,0,0,0);
+
+    for (i = 0; i < number_of_stars; i++)
+      {
+        x = rand() % buffer->width;
+        y = rand() % buffer->height;
+
+        r = 255;
+        g = 255 - rand() % 20;
+        b = 255 - rand() % 100;
+
+        color_buffer_set_pixel(buffer,x,y,r,g,b);
+
+        if (rand() % 7 == 0)  // a bigger star
+          {                   // no need to check picture borders, color buffer takes care of it
+            color_buffer_set_pixel(buffer,x + 1,y,r,g,b);
+            color_buffer_set_pixel(buffer,x + 1,y + 1,r,g,b);
+            color_buffer_set_pixel(buffer,x,y + 1,r,g,b);
+          }
+      }
+  }
+
 void render_sky(t_color_buffer *buffer, double time_of_day)
 
   /**<
@@ -138,11 +178,27 @@ void render_sky(t_color_buffer *buffer, double time_of_day)
     double barycentric_a,barycentric_b,barycentric_c;
     vector<triangle_3D> sky_plane, sky_plane2;                          // triangles that make up the lower/upper sky plane
     unsigned char background_color_from[3], background_color_to[3];     // background color gradient, depends on time of the day
+    t_color_buffer stars;
+    double star_intensity;
 
     time_of_day = saturate(time_of_day,0.0,1.0);
 
-    make_background_gradient(background_color_from,background_color_to,time_of_day);
+    if (time_of_day > 0.25 && time_of_day < 0.75)
+      star_intensity = 0;
+    else
+      {
+        if (time_of_day > 0.75)
+          star_intensity = 1.0 - time_of_day;
+        else
+          star_intensity = time_of_day;
 
+          star_intensity = star_intensity * -4 + 1;
+      }
+
+    color_buffer_init(&stars,buffer->width,buffer->height);
+    draw_stars(&stars,1000);
+
+    make_background_gradient(background_color_from,background_color_to,time_of_day);
     aspect_ratio = buffer->height / ((double) buffer->width);
 
     p1.x = -14;   p1.y = 2;   p1.z = -2;    // lower sky plane geometry
@@ -217,8 +273,14 @@ void render_sky(t_color_buffer *buffer, double time_of_day)
 
             line_3D line(p1,p2);
 
-            color_buffer_set_pixel(buffer,i,j,back_r,back_g,back_b);    // background gradient
-/*
+            color_buffer_get_pixel(&stars,i,j,&r,&g,&b);                            // stars
+
+            r *= star_intensity;
+            g *= star_intensity;
+            b *= star_intensity;
+
+            color_buffer_set_pixel(buffer,i,j,round_to_char(back_r + r),round_to_char(back_g + g),round_to_char(back_b + b));    // background gradient
+
             for (k = 0; k < sky_plane2.size(); k++)                     // upper sky plane
               if (line.intersects_triangle(sky_plane2[k],barycentric_a,barycentric_b,barycentric_c))
                 {
@@ -241,9 +303,11 @@ void render_sky(t_color_buffer *buffer, double time_of_day)
 
                   if (f >= 0.78)
                     color_buffer_set_pixel(buffer,i,j,interpolate_linear(100,255,f),interpolate_linear(100,255,f),interpolate_linear(50,100,f));
-                } */
+                }
           }
       }
+
+    color_buffer_destroy(&stars);
   }
 
 int main(void)
@@ -263,6 +327,8 @@ int main(void)
 
     for (i = 0; i < 10; i++)
       {
+        cout << i << endl;
+
         name[7] = '0' + i;
 
         color_buffer_clear(&buffer);
@@ -271,7 +337,6 @@ int main(void)
 
         color_buffer_save_to_png(&buffer,name);
       }
-
 
     color_buffer_destroy(&buffer);
 

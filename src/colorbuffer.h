@@ -24,6 +24,10 @@ typedef struct
 
 //----------------------------------------------------------------------
 
+unsigned char round_to_char(int value);
+
+//----------------------------------------------------------------------
+
 int color_buffer_init(t_color_buffer *buffer, int width, int height);
 
   /**<
