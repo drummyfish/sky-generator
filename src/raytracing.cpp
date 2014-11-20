@@ -19,7 +19,7 @@ double saturate(double value, double min, double max)
 double interpolate_linear(double value1, double value2, double ratio)
   {
     ratio = saturate(ratio,0.0,1.0);
-    return ratio * value1 + (1 - ratio) * value2;
+    return ratio * value2 + (1 - ratio) * value1;
   }
 
 void cross_product(point_3D vector1, point_3D vector2, point_3D &final_vector)

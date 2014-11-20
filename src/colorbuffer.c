@@ -28,6 +28,18 @@ unsigned char round_to_char(int value)
 
 //----------------------------------------------------------------------
 
+int color_buffer_clear(t_color_buffer *buffer)
+
+  {
+    unsigned int i,j;
+
+    for (j = 0; j < buffer->height; j++)
+      for (i = 0; i < buffer->width; i++)
+        color_buffer_set_pixel(buffer,i,j,255,255,255);
+  }
+
+//----------------------------------------------------------------------
+
 int transform_coordination(int coordination, int limit)
 
   {

@@ -37,14 +37,95 @@ void draw_terrain(t_color_buffer *buffer, unsigned char r1, unsigned char g1, un
       }
   }
 
-void render_sky(t_color_buffer *buffer)
+void make_background_gradient(unsigned char background_color_from[3],unsigned char background_color_to[3], double time_of_day)
+  /**<
+   Makes a background sky color gradient depending on time of day.
+
+   @param background_color_from in this array the first color of the
+          gradient will be returned
+   @param background_color_from in this array the second color of the
+          gradient will be returned
+   @param time_of_day time of day in range <0,1>
+   */
+
+  {
+    unsigned char gradient_points[2][4][3];
+
+    gradient_points[0][0][0] = 0;          // midnight
+    gradient_points[0][0][1] = 0;
+    gradient_points[0][0][2] = 0;
+    gradient_points[1][0][0] = 170;
+    gradient_points[1][0][1] = 146;
+    gradient_points[1][0][2] = 239;
+
+    gradient_points[0][1][0] = 218;        // morning
+    gradient_points[0][1][1] = 215;
+    gradient_points[0][1][2] = 226;
+    gradient_points[1][1][0] = 237;
+    gradient_points[1][1][1] = 177;
+    gradient_points[1][1][2] = 194;
+
+    gradient_points[0][2][0] = 60;         // noon
+    gradient_points[0][2][1] = 13;
+    gradient_points[0][2][2] = 183;
+    gradient_points[1][2][0] = 185;
+    gradient_points[1][2][1] = 221;
+    gradient_points[1][2][2] = 232;
+
+    gradient_points[0][3][0] = 98;         // evening
+    gradient_points[0][3][1] = 13;
+    gradient_points[0][3][2] = 183;
+    gradient_points[1][3][0] = 245;
+    gradient_points[1][3][1] = 137;
+    gradient_points[1][3][2] = 96;
+
+    double ratio;
+    unsigned int interpolate_from, interpolate_to;
+
+    if (time_of_day < 0.25)       // midnight to morning
+      {
+        ratio = time_of_day / 0.25;
+        interpolate_from = 0;
+        interpolate_to = 1;
+      }
+    else if (time_of_day < 0.5)   // morning to noon
+      {
+        ratio = (time_of_day - 0.25) / 0.25;
+        interpolate_from = 1;
+        interpolate_to = 2;
+      }
+    else if (time_of_day < 0.75)  // noon to evening
+      {
+        ratio = (time_of_day - 0.5) / 0.25;
+        interpolate_from = 2;
+        interpolate_to = 3;
+      }
+    else                          // evening to midnight
+      {
+        ratio = (time_of_day - 0.75) / 0.25;
+        interpolate_from = 3;
+        interpolate_to = 0;
+      }
+
+    background_color_from[0] = (unsigned char) interpolate_linear(gradient_points[0][interpolate_from][0],gradient_points[0][interpolate_to][0],ratio);
+    background_color_from[1] = (unsigned char) interpolate_linear(gradient_points[0][interpolate_from][1],gradient_points[0][interpolate_to][1],ratio);
+    background_color_from[2] = (unsigned char) interpolate_linear(gradient_points[0][interpolate_from][2],gradient_points[0][interpolate_to][2],ratio);
+
+    background_color_to[0] = (unsigned char) interpolate_linear(gradient_points[1][interpolate_from][0],gradient_points[1][interpolate_to][0],ratio);
+    background_color_to[1] = (unsigned char) interpolate_linear(gradient_points[1][interpolate_from][1],gradient_points[1][interpolate_to][1],ratio);
+    background_color_to[2] = (unsigned char) interpolate_linear(gradient_points[1][interpolate_from][2],gradient_points[1][interpolate_to][2],ratio);
+  }
+
+void render_sky(t_color_buffer *buffer, double time_of_day)
 
   /**<
    Renders the sky into given color buffer. The sky is rendered only
    over white pixels (255,255,255).
-
+   *
    @param buffer buffer to render the sky into, it must be initialised
           and only white pixels will be redrawn
+   @param time_of_day says what time of day it is in range <0,1>,
+          0 meaning midnight, 0.5 noon etc.
    */
 
   {
@@ -55,7 +136,12 @@ void render_sky(t_color_buffer *buffer)
     triangle_3D triangle;
     double aspect_ratio;
     double barycentric_a,barycentric_b,barycentric_c;
-    vector<triangle_3D> sky_plane, sky_plane2;         // triangles that make up the lower/upper sky plane
+    vector<triangle_3D> sky_plane, sky_plane2;                          // triangles that make up the lower/upper sky plane
+    unsigned char background_color_from[3], background_color_to[3];     // background color gradient, depends on time of the day
+
+    time_of_day = saturate(time_of_day,0.0,1.0);
+
+    make_background_gradient(background_color_from,background_color_to,time_of_day);
 
     aspect_ratio = buffer->height / ((double) buffer->width);
 
@@ -111,12 +197,12 @@ void render_sky(t_color_buffer *buffer)
 
     for (j = 0; j < buffer->height; j++)
       {
-        unsigned char back_r, back_g, back_b;
         double ratio = j / ((double) buffer->height);
+        unsigned char back_r, back_g, back_b;
 
-        back_r = interpolate_linear(180,90,ratio);
-        back_g = interpolate_linear(150,100,ratio);
-        back_b = interpolate_linear(255,200,ratio);
+        back_r = interpolate_linear(background_color_from[0],background_color_to[0],ratio);
+        back_g = interpolate_linear(background_color_from[1],background_color_to[1],ratio);
+        back_b = interpolate_linear(background_color_from[2],background_color_to[2],ratio);
 
         for (i = 0; i < buffer->width; i++)
           {
@@ -132,7 +218,7 @@ void render_sky(t_color_buffer *buffer)
             line_3D line(p1,p2);
 
             color_buffer_set_pixel(buffer,i,j,back_r,back_g,back_b);    // background gradient
-
+/*
             for (k = 0; k < sky_plane2.size(); k++)                     // upper sky plane
               if (line.intersects_triangle(sky_plane2[k],barycentric_a,barycentric_b,barycentric_c))
                 {
@@ -155,7 +241,7 @@ void render_sky(t_color_buffer *buffer)
 
                   if (f >= 0.78)
                     color_buffer_set_pixel(buffer,i,j,interpolate_linear(100,255,f),interpolate_linear(100,255,f),interpolate_linear(50,100,f));
-                }
+                } */
           }
       }
   }
@@ -168,13 +254,25 @@ int main(void)
     width = 1600/2;
     height = 1200/2;
 
+    char name[] = "picturex.png";
+
     color_buffer_init(&buffer,width,height);
 
-    draw_terrain(&buffer,150,250,50,50,150,10);
 
-    render_sky(&buffer);
+    unsigned int i;
 
-    color_buffer_save_to_png(&buffer,"picture.png");
+    for (i = 0; i < 10; i++)
+      {
+        name[7] = '0' + i;
+
+        color_buffer_clear(&buffer);
+        draw_terrain(&buffer,50,200,10,70,100,0);
+        render_sky(&buffer,i / 9.0);
+
+        color_buffer_save_to_png(&buffer,name);
+      }
+
+
     color_buffer_destroy(&buffer);
 
     return 0;
