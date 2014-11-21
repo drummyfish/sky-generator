@@ -118,6 +118,22 @@ void get_triangle_uvw(triangle_3D triangle, double barycentric_a, double barycen
     w = barycentric_a * triangle.a_t.z + barycentric_b * triangle.b_t.z + barycentric_c * triangle.c_t.z;
   }
 
+bool line_3D::intersects_sphere(sphere_3D sphere)
+  {
+    double a,b,c;
+
+    a = this->q0 * this->q0 + this->q1 * this->q1 + this->q2 * this->q2;
+    b = 2 * this->c0 * this->q0 - 2 * sphere.center.x * this->q0 +
+        2 * this->c1 * this->q1 - 2 * sphere.center.y * this->q1 +
+        2 * this->c2 * this->q2 - 2 * sphere.center.z * this->q2;
+    c = this->c0 * this->c0 + this->c1 * this->c1 + this->c2 * this->c2 -
+        2 * sphere.center.x * this->c0 - 2 * sphere.center.y * this->c1 - 2 * sphere.center.z * this->c2 +
+        sphere.center.x * sphere.center.x + sphere.center.y * sphere.center.y + sphere.center.z * sphere.center.z -
+        sphere.radius * sphere.radius;
+
+    return b * b - 4 * a * c >= 0;
+  }
+
 bool line_3D::intersects_triangle(triangle_3D triangle, double &a, double &b, double &c)
   {
     point_3D vector1,vector2,vector3,normal;

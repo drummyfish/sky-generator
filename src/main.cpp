@@ -117,6 +117,47 @@ void make_background_gradient(unsigned char background_color_from[3],unsigned ch
     background_color_to[2] = (unsigned char) interpolate_linear(gradient_points[1][interpolate_from][2],gradient_points[1][interpolate_to][2],ratio);
   }
 
+void get_sun_moon_attributes(double time_of_day, double position[3], unsigned char color[3])
+  /**<
+   Computes the attributes of light or moon depending on time of day.
+
+   @param time_of_day time of day in range <0,1>
+   @param position in this array the [x,y,z] position will be returned
+   @param color in this array the [r,g,b] color will be returned
+   */
+
+   {
+     double ratio;
+
+     if (time_of_day < 0.75 && time_of_day > 0.25)  // sun
+       {
+         ratio = (time_of_day - 0.25) / 0.5;
+
+         position[0] = interpolate_linear(-20,20,ratio);
+         position[1] = 15;
+         position[2] = -5;
+
+         color[0] = 255;
+         color[1] = 255;
+         color[2] = 94;
+       }
+     else                                         // moon
+       {
+         if (time_of_day <= 0.25)
+           ratio = 0.5 + time_of_day / 0.5;
+         else
+           ratio = 0.5 * ((time_of_day - 0.75) / 0.25);
+
+         position[0] = interpolate_linear(-10,10,ratio);
+         position[1] = 15;
+         position[2] = -0.5;
+
+         color[0] = 237;
+         color[1] = 237;
+         color[2] = 237;
+       }
+   }
+
 void draw_stars(t_color_buffer *buffer, unsigned int number_of_stars)
   /**<
    Draws yellow stars on black background into given color buffer.
@@ -148,7 +189,7 @@ void draw_stars(t_color_buffer *buffer, unsigned int number_of_stars)
         color_buffer_set_pixel(buffer,x,y,r,g,b);
 
         if (rand() % 7 == 0)  // a bigger star
-          {                   // no need to check picture borders, color buffer takes care of it
+          {                   // no need to check picture borders, the color buffer takes care of it
             color_buffer_set_pixel(buffer,x + 1,y,r,g,b);
             color_buffer_set_pixel(buffer,x + 1,y + 1,r,g,b);
             color_buffer_set_pixel(buffer,x,y + 1,r,g,b);
@@ -180,6 +221,8 @@ void render_sky(t_color_buffer *buffer, double time_of_day)
     unsigned char background_color_from[3], background_color_to[3];     // background color gradient, depends on time of the day
     t_color_buffer stars;
     double star_intensity;
+    unsigned char sun_moon_color[3];
+    double sun_moon_position[3];
 
     time_of_day = saturate(time_of_day,0.0,1.0);
 
@@ -194,6 +237,8 @@ void render_sky(t_color_buffer *buffer, double time_of_day)
 
           star_intensity = star_intensity * -4 + 1;
       }
+
+    get_sun_moon_attributes(time_of_day,sun_moon_position,sun_moon_color);
 
     color_buffer_init(&stars,buffer->width,buffer->height);
     draw_stars(&stars,1000);
@@ -251,6 +296,12 @@ void render_sky(t_color_buffer *buffer, double time_of_day)
     p1.y = 0.0;
     p1.z = 0.0;
 
+    sphere_3D sun_moon;
+    sun_moon.center.x = sun_moon_position[0];
+    sun_moon.center.y = sun_moon_position[1];
+    sun_moon.center.z = sun_moon_position[2];
+    sun_moon.radius = 1.5;
+
     for (j = 0; j < buffer->height; j++)
       {
         double ratio = j / ((double) buffer->height);
@@ -280,6 +331,9 @@ void render_sky(t_color_buffer *buffer, double time_of_day)
             b *= star_intensity;
 
             color_buffer_set_pixel(buffer,i,j,round_to_char(back_r + r),round_to_char(back_g + g),round_to_char(back_b + b));    // background gradient
+
+            if (line.intersects_sphere(sun_moon))
+              color_buffer_set_pixel(buffer,i,j,sun_moon_color[0],sun_moon_color[1],sun_moon_color[2]);
 
             for (k = 0; k < sky_plane2.size(); k++)                     // upper sky plane
               if (line.intersects_triangle(sky_plane2[k],barycentric_a,barycentric_b,barycentric_c))
@@ -327,7 +381,7 @@ int main(void)
 
     for (i = 0; i < 10; i++)
       {
-        cout << i << endl;
+      //  cout << i << endl;
 
         name[7] = '0' + i;
 

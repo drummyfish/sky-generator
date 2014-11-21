@@ -20,6 +20,12 @@ typedef struct         /**< point, also a vector */
     double z;
   } point_3D;
 
+typedef struct         /**< point, also a vector */
+  {
+    point_3D center;
+    double radius;
+  } sphere_3D;
+
 typedef struct
   {
     point_3D a;        /**< position coordinates */
@@ -84,6 +90,16 @@ class line_3D
                  barycentric coordinations of the intersection will
                  be returned
           @return true if the triangle is intersected by the line
+         */
+
+      bool intersects_sphere(sphere_3D sphere);
+
+        /**<
+          Checks whether the line intersects given sphere.
+
+          @param sphere sphere to check the intersection with
+          @return true if the line intersects the sphere, false
+                  otherwise
          */
   };
 
