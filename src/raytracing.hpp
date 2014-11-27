@@ -105,6 +105,7 @@ class line_3D
 
 void print_point(point_3D point);
 double saturate(double value, double min, double max);
+double saturate_int(int value, int min, int max);
 double interpolate_linear(double value1, double value2, double ratio);
 void cross_product(point_3D vector1, point_3D vector2, point_3D &final_vector);
 void substract_vectors(point_3D vector1, point_3D vector2, point_3D &final_vector);

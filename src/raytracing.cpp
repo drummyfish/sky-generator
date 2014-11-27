@@ -16,6 +16,17 @@ double saturate(double value, double min, double max)
     return value;
   }
 
+double saturate_int(int value, int min, int max)
+  {
+    if (value < min)
+      return min;
+
+    if (value > max)
+      return max;
+
+    return value;
+  }
+
 double interpolate_linear(double value1, double value2, double ratio)
   {
     ratio = saturate(ratio,0.0,1.0);
