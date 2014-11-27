@@ -97,8 +97,8 @@ Zadáním bylo vytvořit program pro vhodně parametrizovatelné generování re
 \begin{itemize}
     \item generování obrázků oblohy podobných fotografii
     \item metoda: sledování paprsku v kombinaci s 2D vykreslováním
-        \item procedurální generování textury mraků
-        \item možnost generovat sekvenci obrázků jako animaci (volitelně navazující)
+    \item procedurální generování textury mraků
+    \item možnost generovat sekvenci obrázků jako animaci (volitelně navazující)
 \end{itemize}
 
 %---------------------------------------------------------------------------
@@ -162,6 +162,8 @@ Vestibulum ac tellus et massa facilisis tristique in in ante. In elementum luctu
 Uveďte informace, které byly potřeba nad rámec výuky probírané na FIT.
 Vysvětlete je pomocí obrázků, schémat, vzorců apod.
 
+3D perlinův šum
+
 \paragraph{Rozsah:} podle potřeby a vlastního uvážení
 
 
@@ -169,7 +171,7 @@ Vysvětlete je pomocí obrázků, schémat, vzorců apod.
 \chapter{Práce na projektu}
 
 \begin{itemize}
-\item \textbf{\AuthorA}: implementace sledování paprsku, vykreslení pozadí a krajiny
+\item \textbf{\AuthorA}: implementace sledování paprsku, vykreslení pozadí a krajiny, hlavní program, dokumentace
 \item \textbf{\AuthorB}: implementace Perlinova šumu
 \end{itemize}
 
@@ -182,10 +184,10 @@ potýkat, co zabralo čas.
 \paragraph{Rozsah:} 5-10 řádků
 
 \begin{itemize}
-\item \textbf{\AuthorA}: Prácné bylo todle a tamto.
-\item \textbf{\AuthorB}: Pracné bylo vyvážit poměr kafe, mléka a cukru.
+\item \textbf{\AuthorA}: Sestavit scénu a nastavit její parametry tak,
+aby výstup alespoň trochu připomínal realitu.
+\item \textbf{\AuthorB}:
 \end{itemize}
-
 
 %---------------------------------------------------------------------------
 \section{Zkušenosti získané řešením projektu}
@@ -193,6 +195,14 @@ potýkat, co zabralo čas.
 Popište, co jste se řešením projektu naučili. Zahrňte dovednosti obecně
 programátorské, věci z oblasti počítačové grafiky, ale i spolupráci v týmu,
 hospodaření s časem, atd.
+
+\begin{itemize}
+\item \textbf{\AuthorA}: Poprvé jsem programoval ray-tracing -- naučil
+jsem se základy matematiky, která se v souvislosti s touto oblastí
+používá (barycentrické souřadnice, výpočty průsečíků).
+\item \textbf{\AuthorB}:
+\end{itemize}
+
 
 \paragraph{Rozsah:} formulujte stručně, uchopte cca 3-5 věcí
 
@@ -207,11 +217,14 @@ schopnost vnímat silné a slabé stránky svého řešení.
 
 \paragraph{Technický návrh (50\%):} (analýza, dekompozice problému, volba
 vhodných prostředků, $\ldots$)
-Stručně (1-2 řádky) komentujte hodnocení.
+Většinu metod a~prostředků jsme si ujasnili před začátkem implementace
+poté, co jsme projekt konzultovali.
 
 \paragraph{Programování (50\%):} (kvalita a čitelnost kódu, spolehlivost běhu,
 obecnost řešení, znovupoužitelnost, $\ldots$)
-Stručně (1-2 řádky) komentujte hodnocení.
+Kód je dobře komentovaný, a~to způsobem kompatibilním se systémy pro
+automatické generování dokumentace. Využívá výhody objektové orientace,
+které nabízí jazyk C++.
 
 \paragraph{Vzhled vytvořeného řešení (50\%):} (uvěřitelnost zobrazení,
 estetická kvalita, vhled GUI, $\ldots$)
@@ -219,7 +232,9 @@ Stručně (1-2 řádky) komentujte hodnocení.
 
 \paragraph{Využití zdrojů (50\%):} (využití existujícího kódu a dat, využití
 literatury, $\ldots$)
-Stručně (1-2 řádky) komentujte hodnocení.
+Využili jsme kód pro práci s~rastrovou grafikou a~formátem PNG napsaný v~rámci
+bakalářské práce. Metody jsme zvolili na základě konzultace a~studia
+literatury.
 
 \paragraph{Hospodaření s časem (50\%):} (rovnoměrné dotažení částí projektu,
 míra spěchu, chybějící části řešení, $\ldots$)
@@ -227,7 +242,8 @@ Stručně (1-2 řádky) komentujte hodnocení.
 
 \paragraph{Spolupráce v týmu (50\%):} (komunikace, dodržování dohod, vzájemné
 spolehnutí, rovnoměrnost, $\ldots$)
-Stručně (1-2 řádky) komentujte hodnocení.
+Snažili jsme se pracovat průběžně a práci každý týden konzultovat. Pro
+správu kódu jsme využili systém GIT.
 
 \paragraph{Celkový dojem (50\%):} (pracnost, získané dovednosti, užitečnost,
 volba zadání, cokoliv, $\ldots$)
@@ -243,10 +259,10 @@ jste použili při tvorbě, atd. Text strukturujte, použijte odrážky,
 
 \paragraph{Rozsah:} odrážky, dle potřeby
 
-\section{Programy a služby použité při tvorbě}
-Zde vypište, jaké technologie vaše řešení používá – co potřebuje k běhu, co
-jste použili při tvorbě, atd. Text strukturujte, použijte odrážky,
-číslování$\ldots$
+\begin{itemize}
+\item jazyky C/C++
+\item překladač gcc
+\end{itemize}
 
 \paragraph{Rozsah:} odrážky, dle potřeby
 
@@ -261,6 +277,10 @@ tak děje.
 
 %---------------------------------------------------------------------------
 \chapter{Doporučení pro budoucí zadávání projektů}
+
+Pozitivně hodnotíme volnost zadání projektů, která dávají prostor pro
+kreativitu, a~možnost přihlásit se v~řípadě zájmu na téma, které je již
+zabrané, čehož jsme sami využili.
 
 Co vám vyhovovalo a co nevyhovovalo na organizaci projektů? Které prvky by měly být zachovány, zesíleny, potlačeny, eliminovány?
 
