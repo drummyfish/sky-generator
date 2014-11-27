@@ -2,7 +2,33 @@
 #include <math.h>
 #include <vector>
 #include <stdlib.h>
+#include <string>
 #include "raytracing.hpp"
+
+/*
+ skygen - generate sky animation
+
+ usage:
+
+ skygen [[-t time][-d duration][-f frames][-o name] | [-h]]
+
+ -t specifies the day time, time is in formad HH:MM in 24 hour format,
+ for example 0:15, 12:00, 23:45. If omitted, 12:00 is considered.
+
+ -d specifies duration in minutes from specified day time. If for
+ example -t 12:00 -d 60 is set, the animation will be genrated from
+ 12:00 to 13:00. If this flag is omitted, then the whole animation will
+ be generated at the same time of the day and will loop smoothly.
+
+ -f specifies number of frames of the animation. If omitted, the value
+ 1 will be used.
+
+ -o specifies output files name. The files will be named nameX.png where
+ X is the sequence number beginning with 1. If -f 1 is set, only one
+ file with name name.png will be generated.
+
+ -h prints the program help.
+ */
 
 using namespace std;
 
@@ -10,6 +36,7 @@ extern "C"
 {
 #include "perlin.h"
 #include "colorbuffer.h"
+#include "getopt.h"
 }
 
 void draw_terrain(t_color_buffer *buffer, unsigned char r1, unsigned char g1, unsigned char b1,
@@ -364,8 +391,111 @@ void render_sky(t_color_buffer *buffer, double time_of_day)
     color_buffer_destroy(&stars);
   }
 
-int main(void)
+struct         // command line argument values
   {
+    double time;
+    double duration;
+    unsigned int frames;
+    string name;
+    bool help;
+  } params;
+
+void parse_command_line_arguments(int argc, char **argv)
+  {
+    params.time = 0.5;     // 12:00
+    params.duration = 0.0;
+    params.frames = 1;
+    params.name = "sky";
+    params.help = false;
+
+    unsigned int i = 0;
+    string helper_string;
+    char *helper_pointer;
+    unsigned int hours;
+    unsigned int minutes;
+
+    while (i < argc)
+      {
+        helper_string = argv[i];
+
+        if (helper_string == "-t")
+          {
+            if (i < argc - 1)
+              {
+                hours = atoi(argv[i + 1]);
+                hours = hours < 0 ? 0 : hours;
+                hours = hours > 23 ? 23 : hours;
+
+                helper_pointer = argv[i + 1];
+
+                while (*helper_pointer != 0 && *helper_pointer != ':')
+                  helper_pointer++;
+
+                if (*helper_pointer == ':')
+                  helper_pointer++;
+
+                minutes = atoi(helper_pointer);
+                minutes = minutes < 0 ? 0 : minutes;
+                minutes = minutes > 59 ? 59 : minutes;
+
+                minutes = hours * 60 + minutes;
+
+                params.time = minutes / ((double) (24 * 60));
+
+                i++;
+              }
+          }
+        else if (helper_string == "-d")
+          {
+            if (i < argc - 1)
+              {
+                cout << (24 * 60) << endl;
+                params.duration = atoi(argv[i + 1]) / ((double) (24 * 60));
+                i++;
+              }
+          }
+        else if (helper_string == "-f")
+          {
+            if (i < argc - 1)
+              {
+                params.frames = atoi(argv[i + 1]);
+                i++;
+              }
+          }
+        else if (helper_string == "-o")
+          {
+            if (i < argc - 1)
+              {
+                params.name = argv[i + 1];
+                i++;
+              }
+          }
+        else if (helper_string == "-h")
+          {
+            params.help = true;
+          }
+
+        i++;
+      }
+  }
+
+int main(int argc, char **argv)
+  {
+    vector<string> args(argv + 1, argv + argc);
+
+    parse_command_line_arguments(argc,argv);
+
+    cout << "--------" << endl;
+    cout << params.time << endl;
+    cout << params.duration << endl;
+    cout << params.name << endl;
+    cout << params.frames << endl;
+    cout << params.help << endl;
+
+    return 0;
+
+
+
     unsigned int width, height;
     t_color_buffer buffer;
 

@@ -8,7 +8,7 @@ CFLAGS2=-Wall -pedantic -g -std=c++0x
 SOURCEDIR=src
 
 all: main.o colorbuffer.o lodepng.o perlin.o raytracing.o
-	$(CC2) $(CFLAGS2) -lm -o program.exe main.o colorbuffer.o lodepng.o perlin.o raytracing.o
+	$(CC2) $(CFLAGS2) -lm -o skygen.exe main.o colorbuffer.o lodepng.o perlin.o raytracing.o
 
 main.o: $(SOURCEDIR)/main.cpp
 	$(CC) $(CFLAGS) -c -o main.o $(SOURCEDIR)/main.cpp
@@ -24,3 +24,4 @@ perlin.o: $(SOURCEDIR)/perlin.c $(SOURCEDIR)/perlin.h
 
 raytracing.o: $(SOURCEDIR)/raytracing.cpp
 	$(CC) $(CFLAGS) -c -o raytracing.o $(SOURCEDIR)/raytracing.cpp
+
