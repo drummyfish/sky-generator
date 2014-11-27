@@ -3,9 +3,13 @@
 #include <vector>
 #include <stdlib.h>
 #include <string>
+#include <sstream>
 #include "raytracing.hpp"
 
 using namespace std;
+
+// macro for int -> str conversion
+#define SSTR( x ) dynamic_cast< std::ostringstream & >( ( std::ostringstream() << std::dec << x ) ).str()
 
 extern "C"
 {
@@ -13,6 +17,24 @@ extern "C"
 #include "colorbuffer.h"
 #include "getopt.h"
 }
+
+struct param_struct       // command line argument values
+  {
+    double time;
+    double duration;
+    unsigned int frames;
+    string name;
+    unsigned int width;
+    unsigned int height;
+    bool help;
+    bool silent;
+  } params;
+
+void print_progress(int line)
+  {
+    if (line % 100 == 0)
+      cout << ".";
+  }
 
 void draw_terrain(t_color_buffer *buffer, unsigned char r1, unsigned char g1, unsigned char b1,
   unsigned char r2, unsigned char g2, unsigned char b2)
@@ -143,7 +165,7 @@ void get_sun_moon_attributes(double time_of_day, double position[3], unsigned ch
          color[1] = 255;
          color[2] = 94;
        }
-     else                                         // moon
+     else                                           // moon
        {
          if (time_of_day <= 0.25)
            ratio = 0.5 + time_of_day / 0.5;
@@ -199,7 +221,7 @@ void draw_stars(t_color_buffer *buffer, unsigned int number_of_stars)
       }
   }
 
-void render_sky(t_color_buffer *buffer, double time_of_day)
+void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_callback)(int))
 
   /**<
    Renders the sky into given color buffer. The sky is rendered only
@@ -209,6 +231,8 @@ void render_sky(t_color_buffer *buffer, double time_of_day)
           and only white pixels will be redrawn
    @param time_of_day says what time of day it is in range <0,1>,
           0 meaning midnight, 0.5 noon etc.
+   @param progress_callback pointer to function that will be called
+          after each line rendered, this parameter can be NULL
    */
 
   {
@@ -361,29 +385,27 @@ void render_sky(t_color_buffer *buffer, double time_of_day)
                     color_buffer_set_pixel(buffer,i,j,interpolate_linear(100,255,f),interpolate_linear(100,255,f),interpolate_linear(50,100,f));
                 }
           }
+
+        if (progress_callback != NULL)
+          progress_callback(j);
       }
 
     color_buffer_destroy(&stars);
   }
 
-struct param_struct       // command line argument values
-  {
-    double time;
-    double duration;
-    unsigned int frames;
-    string name;
-    bool help;
-  } params;
-
 void print_help()
   {
      cout << "Skygen generates sky animations." << endl << endl;
      cout << "usage:" << endl << endl;
-     cout << "skygen [[-t time][-d duration][-f frames][-o name] | [-h]]" << endl << endl;
+     cout << "skygen [[-t time][-d duration][-f frames][-o name][-x width][-y height][-s] | [-h]]" << endl << endl;
      cout << "  -t specifies the day time, time is in HH:MM 24 hour format, for example 0:15, 12:00, 23:45. Default value is 12:00." << endl << endl;
      cout << "  -d specifies duration in minutes from the specified day time. If for example -t 12:00 -d 60 is set, the animation will be genrated from 12:00 to 13:00. If this flag is omitted, the whole animation will be generated at the same time of the day and will loop smoothly." << endl << endl;
      cout << "  -f specifies the number of frames of the animation. Default value is 1." << endl;
      cout << "  -o specifies output file(s) name. The files will be named nameX.png where X is the sequence number beginning with 1. If -f 1 is set, only one file with the name name.png will be generated. 'sky' is the default value." << endl << endl;
+     cout << "  -x sets the resolution of the picture in x direction (width)." << endl << endl;
+     cout << "  -y sets the resolution of the picture in y direction (height)." << endl << endl;
+     cout << "  -s sets the silent mode, nothing will be written during rendering." << endl << endl;
+
      cout << "  -h prints help." << endl;
   }
 
@@ -394,6 +416,9 @@ void parse_command_line_arguments(int argc, char **argv)
     params.frames = 1;
     params.name = "sky";
     params.help = false;
+    params.width = 1024;
+    params.height = 768;
+    params.silent = false;
 
     unsigned int i = 0;
     string helper_string;
@@ -428,16 +453,24 @@ void parse_command_line_arguments(int argc, char **argv)
               params.duration = saturate_int(atoi(argv[i + 1]),0,65536) / ((double) (24 * 60));
 
             else if (helper_string == "-f")
-              params.frames = saturate_int(atoi(argv[i + 1]),0,65536);
+              params.frames = saturate_int(atoi(argv[i + 1]),1,65536);
             else if (helper_string == "-o")
               params.name = argv[i + 1];
+            else if (helper_string == "-x")
+              params.width = saturate_int(atoi(argv[i + 1]),0,65536);
+            else if (helper_string == "-y")
+              params.height = saturate_int(atoi(argv[i + 1]),0,65536);
             else
               i--;
 
             i++;
           }
 
-        if (helper_string == "-h")
+        if (helper_string == "-s")
+          {
+            params.silent = true;
+          }
+        else if (helper_string == "-h")
           {
             params.help = true;
           }
@@ -448,7 +481,10 @@ void parse_command_line_arguments(int argc, char **argv)
 
 int main(int argc, char **argv)
   {
-    vector<string> args(argv + 1, argv + argc);
+    unsigned int i;
+    t_color_buffer buffer;
+    double step;
+    string filename;
 
     parse_command_line_arguments(argc,argv);
 
@@ -458,31 +494,36 @@ int main(int argc, char **argv)
         return 0;
       }
 
-    unsigned int width, height;
-    t_color_buffer buffer;
+    color_buffer_init(&buffer,params.width,params.height);
 
-    width = 1600/2;
-    height = 1200/2;
+    step = params.duration / params.frames;
 
-    char name[] = "picturex.png";
-
-    color_buffer_init(&buffer,width,height);
-
-
-    unsigned int i;
-
-    for (i = 0; i < 10; i++)
+    for (i = 0; i < params.frames; i++)
       {
-      //  cout << i << endl;
-
-        name[7] = '0' + i;
-
         color_buffer_clear(&buffer);
         draw_terrain(&buffer,50,200,10,70,100,0);
-        render_sky(&buffer,i / 9.0);
 
-        color_buffer_save_to_png(&buffer,name);
+        if (!params.silent)
+          {
+            cout << "rendering image " << (i + 1) << endl;
+            render_sky(&buffer,params.time + i * step,print_progress);
+            cout << endl;
+          }
+        else
+          {
+            render_sky(&buffer,params.time + i * step,NULL);
+          }
+
+        if (params.frames == 1)
+          filename = params.name + ".png";
+        else
+          filename = params.name + SSTR(i + 1) + ".png";
+
+        color_buffer_save_to_png(&buffer,(char *) filename.c_str());
       }
+
+    if (!params.silent)
+      cout << "done" << endl;
 
     color_buffer_destroy(&buffer);
 
