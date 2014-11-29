@@ -325,6 +325,56 @@ double get_sun_intensity(double light_directness, double day_time)
     return saturate(intensity - 0.2,0,1) * 0.5 * saturate(light_directness,0,1) + 0.4;
   }
 
+void fast_blur(t_color_buffer *buffer)
+  {
+    #define WINDOW_SIZE 9
+
+    unsigned int i,j,k,l;
+    unsigned char r,g,b;
+    bool color1, color2;
+    int window[WINDOW_SIZE][WINDOW_SIZE];
+    int sum, value;
+    t_color_buffer helper_buffer;
+
+    color_buffer_copy(buffer,&helper_buffer);
+
+    for (j = 0; j < buffer->height; j++)
+      for (i = 0; i < buffer->width; i++)
+        {
+          color1 = false;
+          color2 = false;
+
+          for (k = 0; k < WINDOW_SIZE; k++)
+            for (l = 0; l < WINDOW_SIZE; l++)
+              {
+                color_buffer_get_pixel(&helper_buffer,i + k - WINDOW_SIZE / 2,j + l - WINDOW_SIZE / 2,&r,&g,&b);
+
+                if (r == 0)
+                  color1 = true;
+
+                if (r == 0)
+                  color2 = true;
+
+                window[k][l] = r;
+              }
+
+          if (color1 && color2)  // blur only if needed
+            {
+              sum = 0;
+
+              for (k = 0; k < WINDOW_SIZE; k++)
+                for (l = 0; l < WINDOW_SIZE; l++)
+                  sum += window[k][l];
+
+              value = sum / (WINDOW_SIZE * WINDOW_SIZE);
+
+              color_buffer_set_pixel(buffer,i,j,value,value,value);
+            }
+        }
+
+    color_buffer_destroy(&helper_buffer);
+  }
+
 void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_callback)(int))
 
   /**<
@@ -340,7 +390,7 @@ void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_cal
    */
 
   {
-    unsigned int i,j,k;
+    unsigned int i,j,k,sun_pixel_count;
     point_3D p1,p2;
     double u,v,w,t;
     unsigned char r,g,b;
@@ -348,7 +398,7 @@ void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_cal
     double barycentric_a,barycentric_b,barycentric_c;
     vector<triangle_3D> sky_plane, sky_plane2;                          // triangles that make up the lower/upper sky plane
     unsigned char background_color_from[3], background_color_to[3];     // background color gradient, depends on time of the day
-    t_color_buffer stars;
+    t_color_buffer stars, sun_stencil;
     double star_intensity;
     unsigned char sun_moon_color[3];
     point_3D intersection, to_sun, to_camera;
@@ -360,6 +410,7 @@ void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_cal
     star_intensity = get_star_intensity(time_of_day);
 
     color_buffer_init(&stars,buffer->width,buffer->height);
+    color_buffer_init(&sun_stencil,buffer->width,buffer->height);
     draw_stars(&stars,1000);
 
     make_background_gradient(background_color_from,background_color_to,time_of_day);
@@ -371,6 +422,8 @@ void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_cal
 
     sphere_3D sun_moon;
     get_sun_moon_attributes(time_of_day,sun_moon,sun_moon_color);
+
+    sun_pixel_count = 0;
 
     for (j = 0; j < buffer->height; j++)
       {
@@ -402,8 +455,12 @@ void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_cal
 
             color_buffer_set_pixel(buffer,i,j,round_to_char(back_r + r),round_to_char(back_g + g),round_to_char(back_b + b));    // background gradient
 
-            if (line.intersects_sphere(sun_moon))
-              color_buffer_set_pixel(buffer,i,j,sun_moon_color[0],sun_moon_color[1],sun_moon_color[2]);
+            if (line.intersects_sphere(sun_moon))                       // sun/moon
+              {
+                color_buffer_set_pixel(buffer,i,j,sun_moon_color[0],sun_moon_color[1],sun_moon_color[2]);
+                color_buffer_set_pixel(&sun_stencil,i,j,0,0,0);
+                sun_pixel_count++;
+              }
 
             for (k = 0; k < sky_plane2.size(); k++)                     // upper sky plane
               if (line.intersects_triangle(sky_plane2[k],barycentric_a,barycentric_b,barycentric_c,t))
@@ -421,6 +478,7 @@ void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_cal
                       sun_intensity = get_sun_intensity(dot_product(to_sun,to_camera),time_of_day);
                       intensity = saturate_int(sun_intensity * f * 255,0,255);
                       color_buffer_set_pixel(buffer,i,j,intensity,intensity,intensity);
+                      color_buffer_set_pixel(&sun_stencil,i,j,255,255,255);
                     }
                 }
 
@@ -440,6 +498,7 @@ void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_cal
                       sun_intensity = get_sun_intensity(dot_product(to_sun,to_camera),time_of_day);
                       intensity = saturate_int(sun_intensity * f * 255,0,255);
                       color_buffer_set_pixel(buffer,i,j,intensity,intensity,intensity);
+                      color_buffer_set_pixel(&sun_stencil,i,j,255,255,255);
                     }
                 }
           }
@@ -448,7 +507,22 @@ void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_cal
           progress_callback(j);
       }
 
-    color_buffer_destroy(&stars);
+    if (sun_pixel_count > 10)  // postprocessing: only do this if something of the sun/moon is actually visible to save time
+      {
+        fast_blur(&sun_stencil);
+
+        for (j = 0; j < buffer->height; j++)
+          for (i = 0; i < buffer->width; i++)
+            {
+              color_buffer_get_pixel(&sun_stencil,i,j,&r,&g,&b);
+
+              r = (255 - r) * 0.75;
+
+              color_buffer_add_pixel(buffer,i,j,r,r,r);
+            }
+      }
+
+    color_buffer_destroy(&sun_stencil);
   }
 
 void print_help()
