@@ -1,9 +1,8 @@
 #ifndef PERLIN_H
 #define PERLIN_H
 
-#define WIDTH 128
-#define OCTAVES 8
+#define PERLIN_WIDTH 1024
 
-float perlin(int x, int y, int z);
+float perlin(float x, float y, float z);
 
 #endif
