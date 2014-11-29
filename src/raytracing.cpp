@@ -145,7 +145,19 @@ bool line_3D::intersects_sphere(sphere_3D sphere)
     return b * b - 4 * a * c >= 0;
   }
 
-bool line_3D::intersects_triangle(triangle_3D triangle, double &a, double &b, double &c)
+point_3D line_3D::get_vector_to_origin()
+  {
+    point_3D a,b,result;
+
+    this->get_point(0,a);
+    this->get_point(1,b);
+    substract_vectors(b,a,result);
+
+    normalize(result);
+    return result;
+  }
+
+bool line_3D::intersects_triangle(triangle_3D triangle, double &a, double &b, double &c, double &t)
   {
     point_3D vector1,vector2,vector3,normal;
 
@@ -175,7 +187,7 @@ bool line_3D::intersects_triangle(triangle_3D triangle, double &a, double &b, do
     if (denominator == 0)
       return false;
 
-    double t = (-qa * this->c0 - qb * this->c1 - qc * this->c2 - d) / denominator;
+    t = (-qa * this->c0 - qb * this->c1 - qc * this->c2 - d) / denominator;
 
     /* t now contains parameter value for the intersection */
 

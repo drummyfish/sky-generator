@@ -64,6 +64,16 @@ class line_3D
                  equation will give this point
           */
 
+      point_3D get_vector_to_origin();
+
+        /**<
+          Gets a vector that's parallel with the line and points towards
+          it's origin.
+
+          @return normalized vector that's parallel with the line and
+                  points towards it's origin
+         */
+
       void get_point(double t, point_3D &point);
 
         /**<
@@ -73,7 +83,7 @@ class line_3D
           @param point in this variable the line point will be returned
          */
 
-      bool intersects_triangle(triangle_3D triangle, double &a, double &b, double &c);
+      bool intersects_triangle(triangle_3D triangle, double &a, double &b, double &c, double &t);
 
         /**<
           Checks whether the line intersects given triangle plus
@@ -89,6 +99,8 @@ class line_3D
           @param c in this variable the third coordination of the
                  barycentric coordinations of the intersection will
                  be returned
+          @param t in this variable the line parameter value of the
+                 intersection will be returned
           @return true if the triangle is intersected by the line
          */
 

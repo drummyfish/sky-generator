@@ -142,25 +142,27 @@ void make_background_gradient(unsigned char background_color_from[3],unsigned ch
     background_color_to[2] = (unsigned char) interpolate_linear(gradient_points[1][interpolate_from][2],gradient_points[1][interpolate_to][2],ratio);
   }
 
-void get_sun_moon_attributes(double time_of_day, double position[3], unsigned char color[3])
+void get_sun_moon_attributes(double time_of_day, sphere_3D &sphere, unsigned char color[3])
   /**<
    Computes the attributes of light or moon depending on time of day.
 
    @param time_of_day time of day in range <0,1>
-   @param position in this array the [x,y,z] position will be returned
+   @param sphere in variable the sphere representing the sun/moon will
+          be returned
    @param color in this array the [r,g,b] color will be returned
    */
 
    {
      double ratio;
+     sphere.radius = 0.5;
 
      if (time_of_day < 0.75 && time_of_day > 0.25)  // sun
        {
          ratio = (time_of_day - 0.25) / 0.5;
 
-         position[0] = interpolate_linear(-20,20,ratio);
-         position[1] = 15;
-         position[2] = -5;
+         sphere.center.x = interpolate_linear(-20,20,ratio);
+         sphere.center.y = 6;
+         sphere.center.z = -1;
 
          color[0] = 255;
          color[1] = 255;
@@ -173,9 +175,9 @@ void get_sun_moon_attributes(double time_of_day, double position[3], unsigned ch
          else
            ratio = 0.5 * ((time_of_day - 0.75) / 0.25);
 
-         position[0] = interpolate_linear(-10,10,ratio);
-         position[1] = 15;
-         position[2] = -0.5;
+         sphere.center.x = interpolate_linear(-10,10,ratio);
+         sphere.center.y = 6;
+         sphere.center.z = -0.5;
 
          color[0] = 237;
          color[1] = 237;
@@ -222,56 +224,14 @@ void draw_stars(t_color_buffer *buffer, unsigned int number_of_stars)
       }
   }
 
-void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_callback)(int))
-
+void setup_sky_planes(vector<triangle_3D> *lower_plane, vector<triangle_3D> *upper_plane)
   /**<
-   Renders the sky into given color buffer. The sky is rendered only
-   over white pixels (255,255,255).
-   *
-   @param buffer buffer to render the sky into, it must be initialised
-          and only white pixels will be redrawn
-   @param time_of_day says what time of day it is in range <0,1>,
-          0 meaning midnight, 0.5 noon etc.
-   @param progress_callback pointer to function that will be called
-          after each line rendered, this parameter can be NULL
+   Sets up the sky planes.
    */
 
   {
-    unsigned int i,j,k;
     point_3D p1,p2,p3,p4,pt1,pt2,pt3,pt4;
-    double u,v,w;
-    unsigned char r,g,b;
     triangle_3D triangle;
-    double aspect_ratio;
-    double barycentric_a,barycentric_b,barycentric_c;
-    vector<triangle_3D> sky_plane, sky_plane2;                          // triangles that make up the lower/upper sky plane
-    unsigned char background_color_from[3], background_color_to[3];     // background color gradient, depends on time of the day
-    t_color_buffer stars;
-    double star_intensity;
-    unsigned char sun_moon_color[3];
-    double sun_moon_position[3];
-
-    time_of_day = saturate(time_of_day,0.0,1.0);
-
-    if (time_of_day > 0.25 && time_of_day < 0.75)
-      star_intensity = 0;
-    else
-      {
-        if (time_of_day > 0.75)
-          star_intensity = 1.0 - time_of_day;
-        else
-          star_intensity = time_of_day;
-
-          star_intensity = star_intensity * -4 + 1;
-      }
-
-    get_sun_moon_attributes(time_of_day,sun_moon_position,sun_moon_color);
-
-    color_buffer_init(&stars,buffer->width,buffer->height);
-    draw_stars(&stars,1000);
-
-    make_background_gradient(background_color_from,background_color_to,time_of_day);
-    aspect_ratio = buffer->height / ((double) buffer->width);
 
     p1.x = -14;   p1.y = 2;   p1.z = -2;    // lower sky plane geometry
     p2.x = 14;    p2.y = 2;   p2.z = -2;
@@ -288,7 +248,7 @@ void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_cal
     triangle.a_t = pt1;
     triangle.b_t = pt2;
     triangle.c_t = pt3;
-    sky_plane.push_back(triangle);
+    lower_plane->push_back(triangle);
 
     triangle.a = p2;
     triangle.b = p3;
@@ -296,7 +256,7 @@ void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_cal
     triangle.a_t = pt2;
     triangle.b_t = pt3;
     triangle.c_t = pt4;
-    sky_plane.push_back(triangle);
+    lower_plane->push_back(triangle);
 
     p1.x = -14;   p1.y = -1;   p1.z = -2;    // upper sky plane geometry
     p2.x = 14;    p2.y = -1;   p2.z = -2;
@@ -309,7 +269,7 @@ void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_cal
     triangle.a_t = pt1;
     triangle.b_t = pt2;
     triangle.c_t = pt3;
-    sky_plane2.push_back(triangle);
+    upper_plane->push_back(triangle);
 
     triangle.a = p2;
     triangle.b = p3;
@@ -317,17 +277,70 @@ void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_cal
     triangle.a_t = pt2;
     triangle.b_t = pt3;
     triangle.c_t = pt4;
-    sky_plane2.push_back(triangle);
+    upper_plane->push_back(triangle);
+  }
+
+double get_star_intensity(double day_time)
+  {
+    if (day_time > 0.25 && day_time < 0.75)
+      return 0;
+    else
+      {
+        if (day_time > 0.75)
+          return 1.0 - day_time;
+        else
+          return day_time * -4 + 1;
+      }
+
+    return 0; // to supress warnings
+  }
+
+void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_callback)(int))
+
+  /**<
+   Renders the sky into given color buffer. The sky is rendered only
+   over white pixels (255,255,255).
+   *
+   @param buffer buffer to render the sky into, it must be initialised
+          and only white pixels will be redrawn
+   @param time_of_day says what time of day it is in range <0,1>,
+          0 meaning midnight, 0.5 noon etc.
+   @param progress_callback pointer to function that will be called
+          after each line rendered, this parameter can be NULL
+   */
+
+  {
+    unsigned int i,j,k;
+    point_3D p1,p2;
+    double u,v,w,t;
+    unsigned char r,g,b;
+    double aspect_ratio;
+    double barycentric_a,barycentric_b,barycentric_c;
+    vector<triangle_3D> sky_plane, sky_plane2;                          // triangles that make up the lower/upper sky plane
+    unsigned char background_color_from[3], background_color_to[3];     // background color gradient, depends on time of the day
+    t_color_buffer stars;
+    double star_intensity;
+    unsigned char sun_moon_color[3];
+    point_3D intersection, to_sun, to_camera;
+    double sun_intensity;
+    unsigned char intensity;
+
+    time_of_day = saturate(time_of_day,0.0,1.0);
+    setup_sky_planes(&sky_plane,&sky_plane2);
+    star_intensity = get_star_intensity(time_of_day);
+
+    color_buffer_init(&stars,buffer->width,buffer->height);
+    draw_stars(&stars,1000);
+
+    make_background_gradient(background_color_from,background_color_to,time_of_day);
+    aspect_ratio = buffer->height / ((double) buffer->width);
 
     p1.x = 0.0;  // point to cast the rays from
     p1.y = 0.0;
     p1.z = 0.0;
 
     sphere_3D sun_moon;
-    sun_moon.center.x = sun_moon_position[0];
-    sun_moon.center.y = sun_moon_position[1];
-    sun_moon.center.z = sun_moon_position[2];
-    sun_moon.radius = 1.5;
+    get_sun_moon_attributes(time_of_day,sun_moon,sun_moon_color);
 
     for (j = 0; j < buffer->height; j++)
       {
@@ -363,27 +376,41 @@ void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_cal
               color_buffer_set_pixel(buffer,i,j,sun_moon_color[0],sun_moon_color[1],sun_moon_color[2]);
 
             for (k = 0; k < sky_plane2.size(); k++)                     // upper sky plane
-              if (line.intersects_triangle(sky_plane2[k],barycentric_a,barycentric_b,barycentric_c))
+              if (line.intersects_triangle(sky_plane2[k],barycentric_a,barycentric_b,barycentric_c,t))
                 {
                   get_triangle_uvw(sky_plane2[k],barycentric_a,barycentric_b,barycentric_c,u,v,w);
 
-                  float f = perlin(u * WIDTH / 2 + WIDTH / 2, v * WIDTH / 2 + WIDTH / 2, 100);
-                  f = saturate(f,0.0,1.0);
+                  float f = saturate(perlin(u * WIDTH / 2 + WIDTH / 2, v * WIDTH / 2 + WIDTH / 2, 100),0,1.0);
 
-                  if (f >= 0.75)
-                    color_buffer_set_pixel(buffer,i,j,f*255,f*255,f*255);
+                  if (f >= 0.75)    // threshold
+                    {
+                      line.get_point(t,intersection);
+                      substract_vectors(sun_moon.center,intersection,to_sun);
+                      normalize(to_sun);
+                      to_camera = line.get_vector_to_origin();
+                      sun_intensity = 0.7 * saturate(dot_product(to_sun,to_camera),0,1) + 0.6;
+                      intensity = saturate_int(sun_intensity * f * 255,0,255);
+                      color_buffer_set_pixel(buffer,i,j,intensity,intensity,intensity);
+                    }
                 }
 
-            for (k = 0; k < sky_plane.size(); k++)                      // lower sky plane
-              if (line.intersects_triangle(sky_plane[k],barycentric_a,barycentric_b,barycentric_c))
+             for (k = 0; k < sky_plane.size(); k++)                     // lower sky plane
+              if (line.intersects_triangle(sky_plane[k],barycentric_a,barycentric_b,barycentric_c,t))
                 {
-                  get_triangle_uvw(sky_plane[k],barycentric_a,barycentric_b,barycentric_c,u,v,w);
+                  get_triangle_uvw(sky_plane2[k],barycentric_a,barycentric_b,barycentric_c,u,v,w);
 
-                  float f = perlin(u * WIDTH / 2 + WIDTH / 2, v * WIDTH / 2 + WIDTH / 2, 10);
-                  f = saturate(f,0.0,1.0);
+                  float f = saturate(perlin(u * WIDTH / 2 + WIDTH / 2, v * WIDTH / 2 + WIDTH / 2, 10),0,1.0);
 
-                  if (f >= 0.78)
-                    color_buffer_set_pixel(buffer,i,j,interpolate_linear(100,255,f),interpolate_linear(100,255,f),interpolate_linear(50,100,f));
+                  if (f >= 0.78)    // threshold
+                    {
+                      line.get_point(t,intersection);
+                      substract_vectors(sun_moon.center,intersection,to_sun);
+                      normalize(to_sun);
+                      to_camera = line.get_vector_to_origin();
+                      sun_intensity = 0.7 * saturate(dot_product(to_sun,to_camera),0,1) + 0.6;
+                      intensity = saturate_int(sun_intensity * f * 255,0,255);
+                      color_buffer_set_pixel(buffer,i,j,intensity,intensity,intensity);
+                    }
                 }
           }
 
@@ -421,6 +448,7 @@ void parse_command_line_arguments(int argc, char **argv)
     params.width = 1024;
     params.height = 768;
     params.silent = false;
+    params.supersampling = 1;
 
     unsigned int i = 0;
     string helper_string;
