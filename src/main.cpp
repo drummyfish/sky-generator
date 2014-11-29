@@ -295,6 +295,36 @@ double get_star_intensity(double day_time)
     return 0; // to supress warnings
   }
 
+double get_sun_intensity(double light_directness, double day_time)
+  /**<
+   Says how much given point of sky plane is lightened by the sun/moon.
+
+   @param light_directness dot product of the vector from viewer and to
+          the sun/moon
+   @param day_time time of the day
+   @return intensity in range <0,1>
+   */
+
+  {
+    double intensity;
+
+    if (day_time > 0.25 && day_time < 0.75) // day, sun
+      {
+        intensity = sin((day_time - 0.25) / 0.5 * PI);
+
+        return saturate(intensity - 0.2,0,1) * 0.7 * saturate(light_directness,0,1) + 0.6;
+      }
+
+    // night, moon
+
+    if (day_time <= 0.25)
+      intensity = sin(PI / 2.0 + day_time / 0.25 * PI / 2.0);
+    else
+      intensity = sin((day_time - 0.75) / 0.25 * PI / 2.0);
+
+    return saturate(intensity - 0.2,0,1) * 0.5 * saturate(light_directness,0,1) + 0.4;
+  }
+
 void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_callback)(int))
 
   /**<
@@ -388,7 +418,7 @@ void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_cal
                       substract_vectors(sun_moon.center,intersection,to_sun);
                       normalize(to_sun);
                       to_camera = line.get_vector_to_origin();
-                      sun_intensity = 0.7 * saturate(dot_product(to_sun,to_camera),0,1) + 0.6;
+                      sun_intensity = get_sun_intensity(dot_product(to_sun,to_camera),time_of_day);
                       intensity = saturate_int(sun_intensity * f * 255,0,255);
                       color_buffer_set_pixel(buffer,i,j,intensity,intensity,intensity);
                     }
@@ -407,7 +437,7 @@ void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_cal
                       substract_vectors(sun_moon.center,intersection,to_sun);
                       normalize(to_sun);
                       to_camera = line.get_vector_to_origin();
-                      sun_intensity = 0.7 * saturate(dot_product(to_sun,to_camera),0,1) + 0.6;
+                      sun_intensity = get_sun_intensity(dot_product(to_sun,to_camera),time_of_day);
                       intensity = saturate_int(sun_intensity * f * 255,0,255);
                       color_buffer_set_pixel(buffer,i,j,intensity,intensity,intensity);
                     }
