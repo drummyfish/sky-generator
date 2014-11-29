@@ -3,8 +3,8 @@
 
 CC=gcc
 CC2=c++
-CFLAGS=-std=c99 -g -pedantic -Wall -Wextra
-CFLAGS2=-Wall -pedantic -g -std=c++0x
+CFLAGS=-std=c99 -g -O3 -pedantic -Wall -Wextra
+CFLAGS2=-Wall -pedantic -g -O3 -std=c++0x
 SOURCEDIR=src
 
 all: main.o colorbuffer.o lodepng.o perlin.o raytracing.o

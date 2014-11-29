@@ -28,6 +28,7 @@ struct param_struct       // command line argument values
     unsigned int height;
     bool help;
     bool silent;
+    unsigned int supersampling;
   } params;
 
 void print_progress(int line)
@@ -397,13 +398,14 @@ void print_help()
   {
      cout << "Skygen generates sky animations." << endl << endl;
      cout << "usage:" << endl << endl;
-     cout << "skygen [[-t time][-d duration][-f frames][-o name][-x width][-y height][-s] | [-h]]" << endl << endl;
+     cout << "skygen [[-t time][-d duration][-f frames][-o name][-x width][-y height][-p level][-s] | [-h]]" << endl << endl;
      cout << "  -t specifies the day time, time is in HH:MM 24 hour format, for example 0:15, 12:00, 23:45. Default value is 12:00." << endl << endl;
      cout << "  -d specifies duration in minutes from the specified day time. If for example -t 12:00 -d 60 is set, the animation will be genrated from 12:00 to 13:00. If this flag is omitted, the whole animation will be generated at the same time of the day and will loop smoothly." << endl << endl;
      cout << "  -f specifies the number of frames of the animation. Default value is 1." << endl;
      cout << "  -o specifies output file(s) name. The files will be named nameX.png where X is the sequence number beginning with 1. If -f 1 is set, only one file with the name name.png will be generated. 'sky' is the default value." << endl << endl;
      cout << "  -x sets the resolution of the picture in x direction (width)." << endl << endl;
      cout << "  -y sets the resolution of the picture in y direction (height)." << endl << endl;
+     cout << "  -p sets the supersampling level." << endl << endl;
      cout << "  -s sets the silent mode, nothing will be written during rendering." << endl << endl;
 
      cout << "  -h prints help." << endl;
@@ -451,9 +453,10 @@ void parse_command_line_arguments(int argc, char **argv)
               }
             else if (helper_string == "-d")
               params.duration = saturate_int(atoi(argv[i + 1]),0,65536) / ((double) (24 * 60));
-
             else if (helper_string == "-f")
               params.frames = saturate_int(atoi(argv[i + 1]),1,65536);
+            else if (helper_string == "-p")
+              params.supersampling = saturate_int(atoi(argv[i + 1]),1,5);
             else if (helper_string == "-o")
               params.name = argv[i + 1];
             else if (helper_string == "-x")
@@ -494,7 +497,7 @@ int main(int argc, char **argv)
         return 0;
       }
 
-    color_buffer_init(&buffer,params.width,params.height);
+    color_buffer_init(&buffer,params.width * params.supersampling,params.height * params.supersampling);
 
     step = params.duration / params.frames;
 
@@ -519,7 +522,11 @@ int main(int argc, char **argv)
         else
           filename = params.name + SSTR(i + 1) + ".png";
 
-        color_buffer_save_to_png(&buffer,(char *) filename.c_str());
+        t_color_buffer helper_buffer;
+
+        supersampling(&buffer,params.supersampling,&helper_buffer);
+        color_buffer_save_to_png(&helper_buffer,(char *) filename.c_str());
+        color_buffer_destroy(&helper_buffer);
       }
 
     if (!params.silent)

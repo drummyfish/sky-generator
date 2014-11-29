@@ -246,3 +246,41 @@ int color_buffer_load_from_png(t_color_buffer *buffer, char *filename)
   }
 
 //----------------------------------------------------------------------
+
+void supersampling(t_color_buffer *buffer, unsigned int level,
+  t_color_buffer *destination)
+
+  {
+    unsigned int i, j, k, l, sum_red, sum_green, sum_blue;
+    unsigned char red, green, blue;
+
+    color_buffer_init(destination,buffer->width / level,
+      buffer->height / level);
+
+    for (j = 0; j < destination->height; j++)
+      for (i = 0; i < destination->width; i++)
+        {
+          sum_red = 0;
+          sum_green = 0;
+          sum_blue = 0;
+
+          for (k = 0; k < level; k++)          // get 4 x 4 area pixels sums
+            for (l = 0; l < level; l++)
+              {
+                color_buffer_get_pixel(buffer,(level * i) + k,
+                  (level * j) + l,&red,&green,&blue);
+
+                sum_red += red;
+                sum_green += green;
+                sum_blue += blue;
+              }
+
+          red = sum_red / (level * level);     // average
+          green = sum_green / (level * level);
+          blue = sum_blue / (level * level);
+
+          color_buffer_set_pixel(destination,i,j,red,green,blue);
+        }
+  }
+
+//----------------------------------------------------------------------

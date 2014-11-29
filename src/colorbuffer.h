@@ -192,4 +192,21 @@ int color_buffer_load_from_png(t_color_buffer *buffer, char *filename);
 
 //----------------------------------------------------------------------
 
+void supersampling(t_color_buffer *buffer, unsigned int level,
+  t_color_buffer *destination);
+
+  /**<
+   * Performs supersampling with given color buffer. This operation
+   * smooths the whole image but reduces it's resolution.
+   *
+   * @param buffer input buffer of the operation
+   * @param level supersampling level, value of one has no effect,
+   *        higher values makes the image smaller and smoother (for
+   *        example number 2 will make the image 2x smaller)
+   * @param destination color buffer in which the result will be stored,
+   *        must be deallocated before this function is called
+   */
+
+//----------------------------------------------------------------------
+
 #endif
