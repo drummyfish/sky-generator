@@ -11,12 +11,9 @@ using namespace std;
 // macro for int -> str conversion
 #define SSTR( x ) dynamic_cast< std::ostringstream & >( ( std::ostringstream() << std::dec << x ) ).str()
 
-extern "C"
-{
 #include "perlin.h"
 #include "colorbuffer.h"
 #include "getopt.h"
-}
 
 struct param_struct       // command line argument values
   {
@@ -467,7 +464,7 @@ void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_cal
                 {
                   get_triangle_uvw(sky_plane2[k],barycentric_a,barycentric_b,barycentric_c,u,v,w);
 
-                  float f = saturate(perlin(u * WIDTH / 2 + WIDTH / 2, v * WIDTH / 2 + WIDTH / 2, 100),0,1.0);
+                  float f = saturate(perlin(u * PERLIN_WIDTH / 2 + PERLIN_WIDTH / 2, v * PERLIN_WIDTH / 2 + PERLIN_WIDTH / 2, 100),0,1.0);
 
                   if (f >= 0.75)    // threshold
                     {
@@ -487,7 +484,7 @@ void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_cal
                 {
                   get_triangle_uvw(sky_plane2[k],barycentric_a,barycentric_b,barycentric_c,u,v,w);
 
-                  float f = saturate(perlin(u * WIDTH / 2 + WIDTH / 2, v * WIDTH / 2 + WIDTH / 2, 10),0,1.0);
+                  float f = saturate(perlin(u * PERLIN_WIDTH / 2 + PERLIN_WIDTH / 2, v * PERLIN_WIDTH / 2 + PERLIN_WIDTH / 2, 10),0,1.0);
 
                   if (f >= 0.78)    // threshold
                     {

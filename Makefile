@@ -1,27 +1,29 @@
 # Procedural texture generator project
 # Miloslav Ciz, 2012
 
-CC=gcc
-CC2=c++
-CFLAGS=-std=c99 -g -O3 -pedantic -Wall -Wextra
-CFLAGS2=-Wall -pedantic -g -O3 -std=c++0x
-SOURCEDIR=src
+CXX=c++
+CXXFLAGS=-pedantic -Wall -std=c++11 -g -O2 -MMD # -pg
 
-all: main.o colorbuffer.o lodepng.o perlin.o raytracing.o
-	$(CC2) $(CFLAGS2) -lm -o skygen.exe main.o colorbuffer.o lodepng.o perlin.o raytracing.o
+SRCDIR=src
+OBJFILES=$(SRCDIR)/main.o $(SRCDIR)/colorbuffer.o $(SRCDIR)/lodepng.o $(SRCDIR)/perlin.o $(SRCDIR)/raytracing.o
 
-main.o: $(SOURCEDIR)/main.cpp
-	$(CC) $(CFLAGS) -c -o main.o $(SOURCEDIR)/main.cpp
 
-lodepng.o: $(SOURCEDIR)/lodepng.c $(SOURCEDIR)/lodepng.h
-	$(CC) $(CFLAGS) -c -o lodepng.o $(SOURCEDIR)/lodepng.c
+UNAME := $(shell uname)
+ifeq ($(UNAME), Linux)
+BIN=skygen
+else
+BIN=skygen.exe
+endif
 
-colorbuffer.o: $(SOURCEDIR)/colorbuffer.c $(SOURCEDIR)/colorbuffer.h $(SOURCEDIR)/lodepng.h
-	$(CC) $(CFLAGS) -c -o colorbuffer.o $(SOURCEDIR)/colorbuffer.c
 
-perlin.o: $(SOURCEDIR)/perlin.c $(SOURCEDIR)/perlin.h
-	$(CC) $(CFLAGS) -c -o perlin.o $(SOURCEDIR)/perlin.c
+.PHONY:all clean
 
-raytracing.o: $(SOURCEDIR)/raytracing.cpp
-	$(CC) $(CFLAGS) -c -o raytracing.o $(SOURCEDIR)/raytracing.cpp
+all: skygen
 
+$(BIN): $(OBJFILES)
+	$(CXX) $(CXXFLAGS) $^ -o $@
+
+clean:
+	rm -f $(SRCDIR)/*.o $(SRCDIR)/*.d skygen
+
+-include $(OBJFILES:.o=.d)

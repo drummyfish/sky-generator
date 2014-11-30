@@ -28,7 +28,7 @@ unsigned char round_to_char(int value)
 
 //----------------------------------------------------------------------
 
-int color_buffer_clear(t_color_buffer *buffer)
+void color_buffer_clear(t_color_buffer *buffer)
 
   {
     unsigned int i,j;

@@ -168,7 +168,7 @@ int color_buffer_save_to_png(t_color_buffer *buffer, char *filename);
 
 //----------------------------------------------------------------------
 
-int color_buffer_clear(t_color_buffer *buffer);
+void color_buffer_clear(t_color_buffer *buffer);
 
   /**<
    * Clears given buffer with white color.
