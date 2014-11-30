@@ -310,7 +310,7 @@ double get_sun_intensity(double light_directness, double day_time)
       {
         intensity = sin((day_time - 0.25) / 0.5 * PI);
 
-        return saturate(intensity - 0.2,0,1) * 0.7 * saturate(light_directness,0,1) + 0.6;
+        return saturate(intensity - 0.2,0,1) * 0.6 * saturate(light_directness,0,1) + 0.4;
       }
 
     // night, moon
@@ -320,19 +320,23 @@ double get_sun_intensity(double light_directness, double day_time)
     else
       intensity = sin((day_time - 0.75) / 0.25 * PI / 2.0);
 
-    return saturate(intensity - 0.2,0,1) * 0.5 * saturate(light_directness,0,1) + 0.4;
+    return saturate(intensity - 0.2,0,1) * 0.5 * saturate(light_directness,0,1) + 0.3;
   }
 
 void fast_blur(t_color_buffer *buffer)
   {
     #define WINDOW_SIZE 9
 
-    unsigned int i,j,k,l;
+    unsigned int i,j,k,l,x,y;
     unsigned char r,g,b;
     bool color1, color2;
     int window[WINDOW_SIZE][WINDOW_SIZE];
+    int width_minus_one, height_minus_one;
     int sum, value;
     t_color_buffer helper_buffer;
+
+    width_minus_one = buffer->width - 1;
+    height_minus_one = buffer->height - 1;
 
     color_buffer_copy(buffer,&helper_buffer);
 
@@ -345,7 +349,10 @@ void fast_blur(t_color_buffer *buffer)
           for (k = 0; k < WINDOW_SIZE; k++)
             for (l = 0; l < WINDOW_SIZE; l++)
               {
-                color_buffer_get_pixel(&helper_buffer,i + k - WINDOW_SIZE / 2,j + l - WINDOW_SIZE / 2,&r,&g,&b);
+                x = saturate_int(i + k - WINDOW_SIZE / 2,0,width_minus_one);
+                y = saturate_int(j + l - WINDOW_SIZE / 2,0,height_minus_one);
+
+                color_buffer_get_pixel(&helper_buffer,x,y,&r,&g,&b);
 
                 if (r == 0)
                   color1 = true;
@@ -521,7 +528,8 @@ void render_sky(t_color_buffer *buffer, double time_of_day, double clouds, void 
                   normalize(to_sun);
                   to_camera = line.get_vector_to_origin();
                   sun_intensity = get_sun_intensity(dot_product(to_sun,to_camera),time_of_day);
-                  color_buffer_add_pixel(buffer,i,j,cloud_color[0] * sun_intensity,cloud_color[1] * sun_intensity,cloud_color[2] * sun_intensity);
+
+                  color_buffer_set_pixel(buffer,i,j,cloud_color[0] * sun_intensity,cloud_color[1] * sun_intensity,cloud_color[2] * sun_intensity);
                 }
           }
 
@@ -641,12 +649,28 @@ void parse_command_line_arguments(int argc, char **argv)
       }
   }
 
+void blend_colors(unsigned char color1[3], unsigned char color2[3], double ratio)
+  {
+    color1[0] = interpolate_linear(color1[0],color2[0],ratio);
+    color1[1] = interpolate_linear(color1[1],color2[1],ratio);
+    color1[2] = interpolate_linear(color1[2],color2[2],ratio);
+  }
+
 int main(int argc, char **argv)
   {
     unsigned int i;
     t_color_buffer buffer;
-    double step;
+    double step, helper_time;
     string filename;
+    unsigned char color1[3], color2[3], terrain_color1[3], terrain_color2[3];
+
+    terrain_color1[0] = 50;
+    terrain_color1[1] = 200;
+    terrain_color1[2] = 10;
+
+    terrain_color2[0] = 70;
+    terrain_color2[1] = 100;
+    terrain_color2[2] = 0;
 
     parse_command_line_arguments(argc,argv);
 
@@ -663,17 +687,23 @@ int main(int argc, char **argv)
     for (i = 0; i < params.frames; i++)
       {
         color_buffer_clear(&buffer);
-        draw_terrain(&buffer,50,200,10,70,100,0);
+
+        helper_time = wrap(params.time + i * step,0.0,1.0);
+
+        make_background_gradient(color1,color2,helper_time);
+        blend_colors(color1,terrain_color1,0.45);
+        blend_colors(color2,terrain_color2,0.85);
+        draw_terrain(&buffer,color2[0],color2[1],color2[2],color1[0],color1[1],color1[2]);
 
         if (!params.silent)
           {
             cout << "rendering image " << (i + 1) << endl;
-            render_sky(&buffer,wrap(params.time + i * step,0.0,1.0),params.clouds,print_progress);
+            render_sky(&buffer,helper_time,params.clouds,print_progress);
             cout << endl;
           }
         else
           {
-            render_sky(&buffer,params.time + i * step,params.clouds,NULL);
+            render_sky(&buffer,helper_time,params.clouds,NULL);
           }
 
         if (params.frames == 1)

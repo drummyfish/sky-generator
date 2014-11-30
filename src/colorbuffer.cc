@@ -8,7 +8,6 @@
 
 #include "colorbuffer.h"
 #include "lodepng.h"
-//#include "general.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -44,14 +43,10 @@ int transform_coordination(int coordination, int limit)
 
   {
     if (coordination < 0)
-      {
-        coordination = -1 * coordination;
-        coordination = coordination % limit;
-        coordination = limit - coordination;
-      }
+      return 0;
 
-    if (coordination != 0)
-      coordination = coordination % limit;
+    if (coordination > limit)
+      return limit;
 
     return coordination;
   }
