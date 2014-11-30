@@ -157,6 +157,22 @@ point_3D line_3D::get_vector_to_origin()
     return result;
   }
 
+double wrap(double value, double min, double max)
+  {
+    double difference = max - min;
+
+    if (difference < 0)
+      return value;
+
+    while (value < min)
+      value += difference;
+
+    while (value > max)
+      value -= difference;
+
+    return value;
+  }
+
 bool line_3D::intersects_triangle(triangle_3D triangle, double &a, double &b, double &c, double &t)
   {
     point_3D vector1,vector2,vector3,normal;

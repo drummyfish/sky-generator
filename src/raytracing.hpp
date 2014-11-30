@@ -116,6 +116,7 @@ class line_3D
   };
 
 void print_point(point_3D point);
+double wrap(double value, double min, double max);
 double saturate(double value, double min, double max);
 double saturate_int(int value, int min, int max);
 double interpolate_linear(double value1, double value2, double ratio);

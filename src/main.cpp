@@ -26,6 +26,7 @@ struct param_struct       // command line argument values
     bool help;
     bool silent;
     unsigned int supersampling;
+    double clouds;        // how many clouds there are in range <0,1>
   } params;
 
 void print_progress(int line)
@@ -372,7 +373,37 @@ void fast_blur(t_color_buffer *buffer)
     color_buffer_destroy(&helper_buffer);
   }
 
-void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_callback)(int))
+void cloud_intensity_to_color(double intensity, double threshold, double cloud_density, unsigned char color[3])
+  /**<
+   Maps noise intensity to cloud color.
+
+   @param intensity intensity to be mapped in range <0,1>
+   @param threshold threshold up to which (from 0) the color will be
+          black (0,0,0), must be in range <0,1>
+   @param cloud_density says how dense the clouds should be in range
+          <0,1>, this will affect maximum lightness of the returned
+          color
+   @param color in this variable the mapped color will be returned
+   */
+
+  {
+    if (intensity < threshold)
+      {
+        color[0] = 0;
+        color[1] = 0;
+        color[2] = 0;
+      }
+    else
+      {
+        double q = (intensity - threshold) / (1 - threshold);
+
+        color[0] = q * 255 * cloud_density;
+        color[1] = q * 255 * cloud_density;
+        color[2] = q * 255 * cloud_density;
+      }
+  }
+
+void render_sky(t_color_buffer *buffer, double time_of_day, double clouds, void (* progress_callback)(int))
 
   /**<
    Renders the sky into given color buffer. The sky is rendered only
@@ -382,6 +413,7 @@ void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_cal
           and only white pixels will be redrawn
    @param time_of_day says what time of day it is in range <0,1>,
           0 meaning midnight, 0.5 noon etc.
+   @param clouds how many clouds there should be in range <0,1>
    @param progress_callback pointer to function that will be called
           after each line rendered, this parameter can be NULL
    */
@@ -397,10 +429,9 @@ void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_cal
     unsigned char background_color_from[3], background_color_to[3];     // background color gradient, depends on time of the day
     t_color_buffer stars, sun_stencil;
     double star_intensity;
-    unsigned char sun_moon_color[3];
+    unsigned char sun_moon_color[3], cloud_color[3];
     point_3D intersection, to_sun, to_camera;
     double sun_intensity;
-    unsigned char intensity;
 
     time_of_day = saturate(time_of_day,0.0,1.0);
     setup_sky_planes(&sky_plane,&sky_plane2);
@@ -464,19 +495,16 @@ void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_cal
                 {
                   get_triangle_uvw(sky_plane2[k],barycentric_a,barycentric_b,barycentric_c,u,v,w);
 
-                  float f = saturate(perlin(u * PERLIN_WIDTH / 2 + PERLIN_WIDTH / 2, v * PERLIN_WIDTH / 2 + PERLIN_WIDTH / 2, 100),0,1.0);
+                  float f = saturate(perlin(u * PERLIN_WIDTH / 2 + PERLIN_WIDTH / 2, v * PERLIN_WIDTH / 2 + PERLIN_WIDTH / 2, PERLIN_WIDTH * time_of_day),0,1.0);
 
-                  if (f >= 0.75)    // threshold
-                    {
-                      line.get_point(t,intersection);
-                      substract_vectors(sun_moon.center,intersection,to_sun);
-                      normalize(to_sun);
-                      to_camera = line.get_vector_to_origin();
-                      sun_intensity = get_sun_intensity(dot_product(to_sun,to_camera),time_of_day);
-                      intensity = saturate_int(sun_intensity * f * 255,0,255);
-                      color_buffer_set_pixel(buffer,i,j,intensity,intensity,intensity);
-                      color_buffer_set_pixel(&sun_stencil,i,j,255,255,255);
-                    }
+                  cloud_intensity_to_color(f,clouds,1,cloud_color);
+
+                  line.get_point(t,intersection);
+                  substract_vectors(sun_moon.center,intersection,to_sun);
+                  normalize(to_sun);
+                  to_camera = line.get_vector_to_origin();
+                  sun_intensity = get_sun_intensity(dot_product(to_sun,to_camera),time_of_day);
+                  color_buffer_add_pixel(buffer,i,j,cloud_color[0] * sun_intensity,cloud_color[1] * sun_intensity,cloud_color[2] * sun_intensity);
                 }
 
              for (k = 0; k < sky_plane.size(); k++)                     // lower sky plane
@@ -484,19 +512,16 @@ void render_sky(t_color_buffer *buffer, double time_of_day, void (* progress_cal
                 {
                   get_triangle_uvw(sky_plane2[k],barycentric_a,barycentric_b,barycentric_c,u,v,w);
 
-                  float f = saturate(perlin(u * PERLIN_WIDTH / 2 + PERLIN_WIDTH / 2, v * PERLIN_WIDTH / 2 + PERLIN_WIDTH / 2, 10),0,1.0);
+                  float f = saturate(perlin(u * PERLIN_WIDTH / 2 + PERLIN_WIDTH / 2, v * PERLIN_WIDTH / 2 + PERLIN_WIDTH / 2, PERLIN_WIDTH * (1 - time_of_day)),0,1.0);
 
-                  if (f >= 0.78)    // threshold
-                    {
-                      line.get_point(t,intersection);
-                      substract_vectors(sun_moon.center,intersection,to_sun);
-                      normalize(to_sun);
-                      to_camera = line.get_vector_to_origin();
-                      sun_intensity = get_sun_intensity(dot_product(to_sun,to_camera),time_of_day);
-                      intensity = saturate_int(sun_intensity * f * 255,0,255);
-                      color_buffer_set_pixel(buffer,i,j,intensity,intensity,intensity);
-                      color_buffer_set_pixel(&sun_stencil,i,j,255,255,255);
-                    }
+                  cloud_intensity_to_color(f,clouds,1,cloud_color);
+
+                  line.get_point(t,intersection);
+                  substract_vectors(sun_moon.center,intersection,to_sun);
+                  normalize(to_sun);
+                  to_camera = line.get_vector_to_origin();
+                  sun_intensity = get_sun_intensity(dot_product(to_sun,to_camera),time_of_day);
+                  color_buffer_add_pixel(buffer,i,j,cloud_color[0] * sun_intensity,cloud_color[1] * sun_intensity,cloud_color[2] * sun_intensity);
                 }
           }
 
@@ -526,7 +551,7 @@ void print_help()
   {
      cout << "Skygen generates sky animations." << endl << endl;
      cout << "usage:" << endl << endl;
-     cout << "skygen [[-t time][-d duration][-f frames][-o name][-x width][-y height][-p level][-s] | [-h]]" << endl << endl;
+     cout << "skygen [[-t time][-d duration][-f frames][-o name][-c amount][-x width][-y height][-p level][-s] | [-h]]" << endl << endl;
      cout << "  -t specifies the day time, time is in HH:MM 24 hour format, for example 0:15, 12:00, 23:45. Default value is 12:00." << endl << endl;
      cout << "  -d specifies duration in minutes from the specified day time. If for example -t 12:00 -d 60 is set, the animation will be genrated from 12:00 to 13:00. If this flag is omitted, the whole animation will be generated at the same time of the day and will loop smoothly." << endl << endl;
      cout << "  -f specifies the number of frames of the animation. Default value is 1." << endl;
@@ -534,6 +559,7 @@ void print_help()
      cout << "  -x sets the resolution of the picture in x direction (width)." << endl << endl;
      cout << "  -y sets the resolution of the picture in y direction (height)." << endl << endl;
      cout << "  -p sets the supersampling level." << endl << endl;
+     cout << "  -c say how many clouds there should be. amount is a whole number in range <0,100>." << endl << endl;
      cout << "  -s sets the silent mode, nothing will be written during rendering." << endl << endl;
 
      cout << "  -h prints help." << endl;
@@ -541,12 +567,14 @@ void print_help()
 
 void parse_command_line_arguments(int argc, char **argv)
   {
+    // default values:
     params.time = 0.5;     // 12:00
     params.duration = 0.0;
     params.frames = 1;
     params.name = "sky";
     params.help = false;
     params.width = 1024;
+    params.clouds = 0.5;
     params.height = 768;
     params.silent = false;
     params.supersampling = 1;
@@ -590,6 +618,8 @@ void parse_command_line_arguments(int argc, char **argv)
               params.name = argv[i + 1];
             else if (helper_string == "-x")
               params.width = saturate_int(atoi(argv[i + 1]),0,65536);
+            else if (helper_string == "-c")
+              params.clouds = 1.0 - saturate_int(atoi(argv[i + 1]),0,100) / 100.0;
             else if (helper_string == "-y")
               params.height = saturate_int(atoi(argv[i + 1]),0,65536);
             else
@@ -638,12 +668,12 @@ int main(int argc, char **argv)
         if (!params.silent)
           {
             cout << "rendering image " << (i + 1) << endl;
-            render_sky(&buffer,params.time + i * step,print_progress);
+            render_sky(&buffer,wrap(params.time + i * step,0.0,1.0),params.clouds,print_progress);
             cout << endl;
           }
         else
           {
-            render_sky(&buffer,params.time + i * step,NULL);
+            render_sky(&buffer,params.time + i * step,params.clouds,NULL);
           }
 
         if (params.frames == 1)
