@@ -46,7 +46,7 @@ void draw_terrain(t_color_buffer *buffer, unsigned char r1, unsigned char g1, un
       {
         x = i / ((double) buffer->width - 1) * 2.5 + 0.3;
 
-        height = ((sin(x) + cos(5 * x) * x / 10.0)) * buffer->height * 0.1 + buffer->height * 0.15;
+        height = ((sin(x) + cos(5 * x) * x / 10.0)) * buffer->height * 0.05 + buffer->height * 0.20;
 
         for (j = height; j >= 0; j--)
           {
@@ -231,14 +231,14 @@ void setup_sky_planes(vector<triangle_3D> *lower_plane, vector<triangle_3D> *upp
     point_3D p1,p2,p3,p4,pt1,pt2,pt3,pt4;
     triangle_3D triangle;
 
-    p1.x = -14;   p1.y = 2;   p1.z = -2;    // lower sky plane geometry
-    p2.x = 14;    p2.y = 2;   p2.z = -2;
-    p3.x = -10;   p3.y = 10;  p3.z = 5;
-    p4.x = 10;    p4.y = 10;  p4.z = 5;
+    p1.x = -14;   p1.y = 0;   p1.z = -1;    // lower sky plane geometry
+    p2.x = 14;    p2.y = 0;   p2.z = -1;
+    p3.x = -20;   p3.y = 20;  p3.z = 11;
+    p4.x = 20;    p4.y = 20;  p4.z = 11;
     pt1.x = 0;    pt1.y = 0;                // texture coordinates
-    pt2.x = 1;    pt2.y = 0;
-    pt3.x = 0;    pt3.y = 1;
-    pt4.x = 1;    pt4.y = 1;
+    pt2.x = 0.75; pt2.y = 0;
+    pt3.x = 0;    pt3.y = 0.75;
+    pt4.x = 0.75; pt4.y = 0.75;
 
     triangle.a = p1;
     triangle.b = p2;
@@ -256,10 +256,14 @@ void setup_sky_planes(vector<triangle_3D> *lower_plane, vector<triangle_3D> *upp
     triangle.c_t = pt4;
     lower_plane->push_back(triangle);
 
-    p1.x = -14;   p1.y = -1;   p1.z = -2;    // upper sky plane geometry
-    p2.x = 14;    p2.y = -1;   p2.z = -2;
-    p3.x = -10;   p3.y = 10;   p3.z = 5;
-    p4.x = 10;    p4.y = 10;   p4.z = 5;
+    p1.x = -14;   p1.y = 0;   p1.z = -2;    // upper sky plane geometry
+    p2.x = 14;    p2.y = 0;   p2.z = -2;
+    p3.x = -21;   p3.y = 20;  p3.z = 11;
+    p4.x = 21;    p4.y = 20;  p4.z = 11;
+    pt1.x = 0;    pt1.y = 0;                // texture coordinates
+    pt2.x = 2;    pt2.y = 0;
+    pt3.x = 0;    pt3.y = 2;
+    pt4.x = 2;    pt4.y = 2;
 
     triangle.a = p1;
     triangle.b = p2;
@@ -445,7 +449,9 @@ void render_sky(t_color_buffer *buffer, double time_of_day, double clouds, void 
     star_intensity = get_star_intensity(time_of_day);
 
     color_buffer_init(&stars,buffer->width,buffer->height);
+
     color_buffer_init(&sun_stencil,buffer->width,buffer->height);
+
     draw_stars(&stars,1000);
 
     make_background_gradient(background_color_from,background_color_to,time_of_day);
@@ -477,7 +483,7 @@ void render_sky(t_color_buffer *buffer, double time_of_day, double clouds, void 
               continue;
 
             p2.x = ((i / ((double) buffer->width)) - 0.5);
-            p2.y = 0.5;
+            p2.y = 0.4;  // focal distance
             p2.z = ((j / ((double) buffer->height)) - 0.5) * aspect_ratio;
 
             line_3D line(p1,p2);
@@ -502,7 +508,7 @@ void render_sky(t_color_buffer *buffer, double time_of_day, double clouds, void 
                 {
                   get_triangle_uvw(sky_plane2[k],barycentric_a,barycentric_b,barycentric_c,u,v,w);
 
-                  float f = saturate(perlin(u * PERLIN_WIDTH / 2 + PERLIN_WIDTH / 2, v * PERLIN_WIDTH / 2 + PERLIN_WIDTH / 2, PERLIN_WIDTH * time_of_day),0,1.0);
+                  float f = saturate(perlin(wrap(u,0,1) * PERLIN_WIDTH, wrap(v,0,1) * PERLIN_WIDTH, PERLIN_WIDTH * time_of_day),0,1.0);
 
                   cloud_intensity_to_color(f,clouds,1,cloud_color);
 
@@ -519,7 +525,7 @@ void render_sky(t_color_buffer *buffer, double time_of_day, double clouds, void 
                 {
                   get_triangle_uvw(sky_plane2[k],barycentric_a,barycentric_b,barycentric_c,u,v,w);
 
-                  float f = saturate(perlin(u * PERLIN_WIDTH / 2 + PERLIN_WIDTH / 2, v * PERLIN_WIDTH / 2 + PERLIN_WIDTH / 2, PERLIN_WIDTH * (1 - time_of_day)),0,1.0);
+                  float f = saturate(perlin(wrap(u,0,1) * PERLIN_WIDTH, wrap(v,0,1) * PERLIN_WIDTH, PERLIN_WIDTH * (1 - time_of_day)),0,1.0);
 
                   cloud_intensity_to_color(f,clouds,1,cloud_color);
 
@@ -529,7 +535,7 @@ void render_sky(t_color_buffer *buffer, double time_of_day, double clouds, void 
                   to_camera = line.get_vector_to_origin();
                   sun_intensity = get_sun_intensity(dot_product(to_sun,to_camera),time_of_day);
 
-                  color_buffer_set_pixel(buffer,i,j,cloud_color[0] * sun_intensity,cloud_color[1] * sun_intensity,cloud_color[2] * sun_intensity);
+                  color_buffer_add_pixel(buffer,i,j,cloud_color[0] * sun_intensity,cloud_color[1] * sun_intensity,cloud_color[2] * sun_intensity);
                 }
           }
 
@@ -693,6 +699,7 @@ int main(int argc, char **argv)
         make_background_gradient(color1,color2,helper_time);
         blend_colors(color1,terrain_color1,0.45);
         blend_colors(color2,terrain_color2,0.85);
+
         draw_terrain(&buffer,color2[0],color2[1],color2[2],color1[0],color1[1],color1[2]);
 
         if (!params.silent)

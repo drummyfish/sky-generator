@@ -43,10 +43,14 @@ int transform_coordination(int coordination, int limit)
 
   {
     if (coordination < 0)
-      return 0;
+      {
+        coordination = -1 * coordination;
+        coordination = coordination % limit;
+        coordination = limit - coordination;
+      }
 
-    if (coordination > limit)
-      return limit;
+    if (coordination != 0)
+      coordination = coordination % limit;
 
     return coordination;
   }
