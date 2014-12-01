@@ -289,9 +289,9 @@ double get_star_intensity(double day_time)
     else
       {
         if (day_time > 0.75)
-          return 1.0 - day_time;
+          return (day_time - 0.75) / 0.25;
         else
-          return day_time * -4 + 1;
+          return (0.25 - day_time) / 0.25;
       }
 
     return 0; // to supress warnings
@@ -414,7 +414,7 @@ void cloud_intensity_to_color(double intensity, double threshold, double cloud_d
       }
   }
 
-void render_sky(t_color_buffer *buffer, double time_of_day, double clouds, void (* progress_callback)(int))
+void render_sky(t_color_buffer *buffer, double time_of_day, double clouds, double offset, void (* progress_callback)(int))
 
   /**<
    Renders the sky into given color buffer. The sky is rendered only
@@ -425,12 +425,16 @@ void render_sky(t_color_buffer *buffer, double time_of_day, double clouds, void 
    @param time_of_day says what time of day it is in range <0,1>,
           0 meaning midnight, 0.5 noon etc.
    @param clouds how many clouds there should be in range <0,1>
+   @param offset value in range <0,1>, sets noise offset in order to
+          animate clouds with constant time_of_day value, setting all
+          the values between 0 and 1 will make the animation loop, if
+          time_od_day is changing itself, this can be always 0
    @param progress_callback pointer to function that will be called
           after each line rendered, this parameter can be NULL
    */
 
   {
-    unsigned int i,j,k,sun_pixel_count;
+    unsigned int i,j,k,l,sun_pixel_count;
     point_3D p1,p2;
     double u,v,w,t;
     unsigned char r,g,b;
@@ -503,40 +507,38 @@ void render_sky(t_color_buffer *buffer, double time_of_day, double clouds, void 
                 sun_pixel_count++;
               }
 
-            for (k = 0; k < sky_plane2.size(); k++)                     // upper sky plane
-              if (line.intersects_triangle(sky_plane2[k],barycentric_a,barycentric_b,barycentric_c,t))
-                {
-                  get_triangle_uvw(sky_plane2[k],barycentric_a,barycentric_b,barycentric_c,u,v,w);
+            for (l = 0; l < 2; l++)
+              {
+                vector<triangle_3D> *plane;
 
-                  float f = saturate(perlin(wrap(u,0,1) * PERLIN_WIDTH, wrap(v,0,1) * PERLIN_WIDTH, PERLIN_WIDTH * time_of_day),0,1.0);
+                if (l == 0)
+                  plane = &sky_plane;
+                else
+                  plane = &sky_plane2;
 
-                  cloud_intensity_to_color(f,clouds,1,cloud_color);
+                for (k = 0; k < plane->size(); k++)                      // sky planes
+                  if (line.intersects_triangle((*plane)[k],barycentric_a,barycentric_b,barycentric_c,t))
+                  {
+                    get_triangle_uvw((*plane)[k],barycentric_a,barycentric_b,barycentric_c,u,v,w);
 
-                  line.get_point(t,intersection);
-                  substract_vectors(sun_moon.center,intersection,to_sun);
-                  normalize(to_sun);
-                  to_camera = line.get_vector_to_origin();
-                  sun_intensity = get_sun_intensity(dot_product(to_sun,to_camera),time_of_day);
-                  color_buffer_add_pixel(buffer,i,j,cloud_color[0] * sun_intensity,cloud_color[1] * sun_intensity,cloud_color[2] * sun_intensity);
-                }
+                    u = wrap(u + offset,0,1);
+                    v = wrap(v + offset,0,1);
 
-             for (k = 0; k < sky_plane.size(); k++)                     // lower sky plane
-              if (line.intersects_triangle(sky_plane[k],barycentric_a,barycentric_b,barycentric_c,t))
-                {
-                  get_triangle_uvw(sky_plane2[k],barycentric_a,barycentric_b,barycentric_c,u,v,w);
+                    w = (l == 0 ? time_of_day : 1 - time_of_day);
 
-                  float f = saturate(perlin(wrap(u,0,1) * PERLIN_WIDTH, wrap(v,0,1) * PERLIN_WIDTH, PERLIN_WIDTH * (1 - time_of_day)),0,1.0);
+                    float f = saturate(perlin(u * PERLIN_WIDTH,v * PERLIN_WIDTH, w * PERLIN_WIDTH),0,1.0);
 
-                  cloud_intensity_to_color(f,clouds,1,cloud_color);
+                    cloud_intensity_to_color(f,clouds,1,cloud_color);
 
-                  line.get_point(t,intersection);
-                  substract_vectors(sun_moon.center,intersection,to_sun);
-                  normalize(to_sun);
-                  to_camera = line.get_vector_to_origin();
-                  sun_intensity = get_sun_intensity(dot_product(to_sun,to_camera),time_of_day);
+                    line.get_point(t,intersection);
+                    substract_vectors(sun_moon.center,intersection,to_sun);
+                    normalize(to_sun);
+                    to_camera = line.get_vector_to_origin();
+                    sun_intensity = get_sun_intensity(dot_product(to_sun,to_camera),time_of_day);
 
-                  color_buffer_add_pixel(buffer,i,j,cloud_color[0] * sun_intensity,cloud_color[1] * sun_intensity,cloud_color[2] * sun_intensity);
-                }
+                    color_buffer_add_pixel(buffer,i,j,cloud_color[0] * sun_intensity,cloud_color[1] * sun_intensity,cloud_color[2] * sun_intensity);
+                  }
+              }
           }
 
         if (progress_callback != NULL)
@@ -666,7 +668,7 @@ int main(int argc, char **argv)
   {
     unsigned int i;
     t_color_buffer buffer;
-    double step, helper_time;
+    double step, noise_offset, noise_step, helper_time;
     string filename;
     unsigned char color1[3], color2[3], terrain_color1[3], terrain_color2[3];
 
@@ -689,6 +691,8 @@ int main(int argc, char **argv)
     color_buffer_init(&buffer,params.width * params.supersampling,params.height * params.supersampling);
 
     step = params.duration / params.frames;
+    noise_offset = 0;
+    noise_step = 1.0 / ((double) params.frames);
 
     for (i = 0; i < params.frames; i++)
       {
@@ -705,13 +709,16 @@ int main(int argc, char **argv)
         if (!params.silent)
           {
             cout << "rendering image " << (i + 1) << endl;
-            render_sky(&buffer,helper_time,params.clouds,print_progress);
+            render_sky(&buffer,helper_time,params.clouds,noise_offset,print_progress);
             cout << endl;
           }
         else
           {
-            render_sky(&buffer,helper_time,params.clouds,NULL);
+            render_sky(&buffer,helper_time,params.clouds,noise_offset,NULL);
           }
+
+        if (params.duration == 0.0)   // hopefully this is safe
+          noise_offset += noise_step;
 
         if (params.frames == 1)
           filename = params.name + ".png";
