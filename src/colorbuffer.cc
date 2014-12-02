@@ -67,11 +67,12 @@ void color_buffer_set_pixel(t_color_buffer *buffer, int position_x,
     position_x = transform_coordination(position_x,buffer->width);
     position_y = transform_coordination(position_y,buffer->height);
 
-    index = 3 * (position_y * buffer->width + position_x);
+    index = 4 * (position_y * buffer->width + position_x);
 
     buffer->data[index] = red;
     buffer->data[index + 1] = green;
     buffer->data[index + 2] = blue;
+    buffer->data[index + 3] = 0xff;
 
     return;
   }
@@ -100,28 +101,6 @@ void color_buffer_add_pixel(t_color_buffer *buffer, int position_x,
 
 //----------------------------------------------------------------------
 
-void color_buffer_substract_pixel(t_color_buffer *buffer,
-  int position_x, int position_y, unsigned char red,
-  unsigned char green, unsigned char blue)
-
-  {
-    unsigned char help_red, help_green, help_blue;
-    int help_red2, help_green2, help_blue2;
-
-    color_buffer_get_pixel(buffer,position_x,position_y,&help_red,
-      &help_green,&help_blue);
-
-    help_red2 = help_red - red;
-    help_green2 = help_green - green;
-    help_blue2 = help_blue - blue;
-
-    color_buffer_set_pixel(buffer,position_x,position_y,
-      round_to_char(help_red2),round_to_char(help_green2),
-      round_to_char(help_blue2));
-  }
-
-//----------------------------------------------------------------------
-
 void color_buffer_get_pixel(t_color_buffer *buffer, int position_x,
   int position_y, unsigned char *red, unsigned char *green,
   unsigned char *blue)
@@ -132,7 +111,7 @@ void color_buffer_get_pixel(t_color_buffer *buffer, int position_x,
     position_x = transform_coordination(position_x,buffer->width);
     position_y = transform_coordination(position_y,buffer->height);
 
-    index = 3 * (position_y * buffer->width + position_x);
+    index = 4 * (position_y * buffer->width + position_x);
 
     if (red != NULL)
       *red = buffer->data[index];
@@ -207,7 +186,7 @@ int color_buffer_init(t_color_buffer *buffer, int width, int height)
     buffer->width = width;         // set the new width and height
     buffer->height = height;
 
-    length = width * height * 3 * sizeof(char);
+    length = width * height * 4 * sizeof(char);
 
     buffer->data = (unsigned char *) malloc(length);
 
@@ -225,7 +204,7 @@ int color_buffer_init(t_color_buffer *buffer, int width, int height)
 int color_buffer_save_to_png(t_color_buffer *buffer, char *filename)
 
   {
-    if (lodepng_encode24_file(filename,buffer->data,
+    if (lodepng_encode32_file(filename,buffer->data,
       buffer->width,buffer->height) == 0)
       return 1;
     else
@@ -237,7 +216,7 @@ int color_buffer_save_to_png(t_color_buffer *buffer, char *filename)
 int color_buffer_load_from_png(t_color_buffer *buffer, char *filename)
 
   {
-    if (lodepng_decode24_file(&(buffer->data),&buffer->width,
+    if (lodepng_decode32_file(&(buffer->data),&buffer->width,
         &buffer->height,filename) == 0)
       return 1;
     else
