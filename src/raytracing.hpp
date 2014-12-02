@@ -116,6 +116,8 @@ class line_3D
   };
 
 void print_point(point_3D point);
+point_3D make_point(double x, double y, double z);
+void make_color(unsigned char color[3],unsigned char r, unsigned char g, unsigned char b);
 double wrap(double value, double min, double max);
 double saturate(double value, double min, double max);
 int saturate_int(int value, int min, int max);

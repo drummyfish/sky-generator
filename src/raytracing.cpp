@@ -16,6 +16,24 @@ double saturate(double value, double min, double max)
     return value;
   }
 
+point_3D make_point(double x, double y, double z)
+  {
+    point_3D result;
+
+    result.x = x;
+    result.y = y;
+    result.z = z;
+
+    return result;
+  }
+
+void make_color(unsigned char color[3],unsigned char r, unsigned char g, unsigned char b)
+  {
+    color[0] = r;
+    color[1] = g;
+    color[2] = b;
+  }
+
 int saturate_int(int value, int min, int max)
   {
     if (value < min)
