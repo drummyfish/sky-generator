@@ -1,4 +1,4 @@
-#include "raytracing.hpp"
+#include "raytracing.h"
 
 void print_point(point_3D point)
   {
@@ -32,6 +32,13 @@ void make_color(unsigned char color[3],unsigned char r, unsigned char g, unsigne
     color[0] = r;
     color[1] = g;
     color[2] = b;
+  }
+
+void blend_colors(unsigned char color1[3], unsigned char color2[3], double ratio)
+  {
+    color1[0] = interpolate_linear(color1[0],color2[0],ratio);
+    color1[1] = interpolate_linear(color1[1],color2[1],ratio);
+    color1[2] = interpolate_linear(color1[2],color2[2],ratio);
   }
 
 int saturate_int(int value, int min, int max)
