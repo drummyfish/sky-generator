@@ -400,9 +400,7 @@ void cloud_intensity_to_color(double intensity, double threshold, double cloud_d
   {
     if (intensity < threshold)
       {
-        color[0] = 0;
-        color[1] = 0;
-        color[2] = 0;
+        color[0] = 0; color[1] = 0; color[2] = 0;
       }
     else
       {
@@ -415,7 +413,6 @@ void cloud_intensity_to_color(double intensity, double threshold, double cloud_d
   }
 
 void render_sky(t_color_buffer *buffer, double time_of_day, double clouds, double density, double offset, void (* progress_callback)(int))
-
   /**<
    Renders the sky into given color buffer. The sky is rendered only
    over white pixels (255,255,255).
@@ -436,26 +433,19 @@ void render_sky(t_color_buffer *buffer, double time_of_day, double clouds, doubl
 
   {
     unsigned int i,j,k,l,sun_pixel_count;
-    point_3D p1,p2;
-    double u,v,w,t;
-    unsigned char r,g,b;
-    double aspect_ratio;
-    double barycentric_a,barycentric_b,barycentric_c;
+    point_3D p1, p2, intersection, to_sun, to_camera;
+    double u, v, w, t, star_intensity, sun_intensity, aspect_ratio, barycentric_a, barycentric_b, barycentric_c;
+    unsigned char r, g, b;
     vector<triangle_3D> sky_plane, sky_plane2;                          // triangles that make up the lower/upper sky plane
-    unsigned char background_color_from[3], background_color_to[3];     // background color gradient, depends on time of the day
+    unsigned char background_color_from[3], background_color_to[3], sun_moon_color[3], cloud_color[3];
     t_color_buffer stars, sun_stencil;
-    double star_intensity;
-    unsigned char sun_moon_color[3], cloud_color[3];
-    point_3D intersection, to_sun, to_camera;
-    double sun_intensity;
 
     time_of_day = saturate(time_of_day,0.0,1.0);
     setup_sky_planes(&sky_plane,&sky_plane2);
     star_intensity = get_star_intensity(time_of_day);
 
-    color_buffer_init(&stars,buffer->width,buffer->height);
-
-    color_buffer_init(&sun_stencil,buffer->width,buffer->height);
+    color_buffer_init(&stars,buffer->width,buffer->height);             // buffer to which stars will be drawn
+    color_buffer_init(&sun_stencil,buffer->width,buffer->height);       // buffer to which sun stencil will be drawn
 
     draw_stars(&stars,1000);
 
@@ -469,7 +459,7 @@ void render_sky(t_color_buffer *buffer, double time_of_day, double clouds, doubl
 
     sun_pixel_count = 0;
 
-    for (j = 0; j < buffer->height; j++)            // for all lines
+    for (j = 0; j < buffer->height; j++)            // for each picture line
       {
         // make the background color from gradient:
 
@@ -479,7 +469,7 @@ void render_sky(t_color_buffer *buffer, double time_of_day, double clouds, doubl
         back_g = interpolate_linear(background_color_from[1],background_color_to[1],ratio);
         back_b = interpolate_linear(background_color_from[2],background_color_to[2],ratio);
 
-        for (i = 0; i < buffer->width; i++)        // for all columns
+        for (i = 0; i < buffer->width; i++)        // for each picture column
           {
             color_buffer_get_pixel(buffer,i,j,&r,&g,&b);
 
@@ -589,17 +579,17 @@ void parse_command_line_arguments(int argc, char **argv)
     params.silent = false;
     params.supersampling = 1;
 
-    unsigned int i = 0;
+    int i = 0;
     string helper_string;
     char *helper_pointer;
     int hours;
     int minutes;
 
-    while ((int) i < argc)
+    while (i < argc)
       {
         helper_string = argv[i];
 
-        if ((int) i < argc - 1)   // options that take parameters
+        if (i < argc - 1)     // options that take parameters
           {
             if (helper_string == "-t")
               {
@@ -704,7 +694,7 @@ int main(int argc, char **argv)
             render_sky(&buffer,helper_time,params.clouds,params.cloud_density,noise_offset,NULL);
           }
 
-        if (params.duration == 0.0)   // hopefully this is safe
+        if (params.duration == 0.0)        // hopefully this is safe
           noise_offset += noise_step;
 
         filename = params.frames == 1 ? params.name + ".png" : params.name + SSTR(i + 1) + ".png";

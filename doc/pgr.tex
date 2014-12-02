@@ -131,9 +131,9 @@ spojitosti implementovaného 3D šumu.
     \captionof{figure}{Popisek vzorového obrázek}
 \end{center}
 
-\section{Druhá věc}
+\section{Paralelizace}
 
-Etiam a laoreet dolor, vel blandit ipsum. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Nam aliquet ipsum eget semper pretium. Maecenas mauris tortor, pretium sit amet convallis et, iaculis vel tortor. Donec ultrices magna et commodo tempus. Etiam sagittis lectus vitae lectus ultricies tincidunt. Nam aliquam non magna eget pellentesque.
+možná nějaký odhad zrychlení
 
 \begin{table}[h!]
     \begin{center}
@@ -165,7 +165,7 @@ Vestibulum ac tellus et massa facilisis tristique in in ante. In elementum luctu
 Uveďte informace, které byly potřeba nad rámec výuky probírané na FIT.
 Vysvětlete je pomocí obrázků, schémat, vzorců apod.
 
-3D perlinův šum
+3D perlinův šum, paralelizace
 
 \paragraph{Rozsah:} podle potřeby a vlastního uvážení
 
@@ -174,8 +174,8 @@ Vysvětlete je pomocí obrázků, schémat, vzorců apod.
 \chapter{Práce na projektu}
 
 \begin{itemize}
-\item \textbf{\AuthorA}: implementace sledování paprsku, vykreslení pozadí a krajiny, hlavní program, dokumentace
-\item \textbf{\AuthorB}: implementace Perlinova šumu
+\item \textbf{\AuthorA}: implementace sledování paprsku, vykreslení pozadí a~krajiny, hlavní program, dokumentace
+\item \textbf{\AuthorB}: implementace Perlinova šumu, paralelizace
 \end{itemize}
 
 %---------------------------------------------------------------------------
@@ -192,14 +192,12 @@ aby výstup alespoň trochu připomínal realitu.
 %---------------------------------------------------------------------------
 \section{Zkušenosti získané řešením projektu}
 
-Popište, co jste se řešením projektu naučili. Zahrňte dovednosti obecně
-programátorské, věci z oblasti počítačové grafiky, ale i spolupráci v týmu,
-hospodaření s časem, atd.
-
 \begin{itemize}
 \item \textbf{\AuthorA}: Poprvé jsem programoval ray-tracing -- naučil
-jsem se základy matematiky, která se v souvislosti s touto oblastí
-používá (barycentrické souřadnice, výpočty průsečíků).
+jsem se základy matematiky, která se v~této oblasti
+používá (barycentrické souřadnice, výpočty průsečíků apod.). Vyzkoušel
+jsem si modelování reálné přírodní scény, což jsem dosud ve škole sám
+nedělal.
 \item \textbf{\AuthorB}:
 \end{itemize}
 
@@ -248,14 +246,16 @@ pro videa apod.
 \chapter{Ovládání vytvořeného programu}
 
 \section{Technologie potřebné pro spuštění programu}
-Zde vypište, jaké technologie vaše řešení používá – co potřebuje k běhu, co
-jste použili při tvorbě, atd. Text strukturujte, použijte odrážky,
-číslování$\ldots$
+Projekt využívá tyto technologie:
 
-\paragraph{Rozsah:} odrážky, dle potřeby
+\begin{itemize}
+\item jazyk C++
+\item překladač gcc
+\item knihovna LodePNG
+\end{itemize}
 
-
-\paragraph{Rozsah:} odrážky, dle potřeby
+Program je možné přeložit a~spustit na platformách, které mají C++
+překladač.
 
 \section{Obsluha programu}
 
@@ -263,7 +263,7 @@ Program se používá z~příkazové řádky následujícím způsobem:
 {\tt skygen [[-t time][-d duration][-f frames][-o name][-c amount][-e density][-x width][-y height][-p level][-s] | [-h]]}
 
 \begin{itemize}
-\item {\tt -t} specifikuje denní dobu ve 24hodinovém formátu {HH:MM}.
+\item {\tt -t} specifikuje denní dobu v~24hodinovém formátu {\tt HH:MM}.
 \item {\tt -d} specifikuje trvání animace od dané denní doby celým číslem udávajícím počtet minut.
 \item {\tt -f} udává počet snímků animace.
 \item {\tt -o} říká, jaké bude jméno (jména) výstupního souboru.
@@ -279,8 +279,8 @@ Program se používá z~příkazové řádky následujícím způsobem:
 %---------------------------------------------------------------------------
 \chapter{Doporučení pro budoucí zadávání projektů}
 
-Pozitivně hodnotíme volnost zadání projektů, která dávají prostor pro
-kreativitu, a~možnost přihlásit se v~řípadě zájmu na téma, které je již
+Pozitivně hodnotíme volnost zadání projektů s~velkým prostorem pro
+kreativitu a~možnost přihlásit se v~řípadě zájmu i~na téma, které je již
 zabrané, čehož jsme sami využili.
 
 %---------------------------------------------------------------------------
