@@ -577,7 +577,6 @@ void print_help()
      cout << "  -p sets the supersampling level." << endl << endl;
      cout << "  -c say how many clouds there should be. amount is a whole number in range <0,100>." << endl << endl;
      cout << "  -s sets the silent mode, nothing will be written during rendering." << endl << endl;
-
      cout << "  -h prints help." << endl;
   }
 

@@ -16,7 +16,7 @@ double saturate(double value, double min, double max)
     return value;
   }
 
-double saturate_int(int value, int min, int max)
+int saturate_int(int value, int min, int max)
   {
     if (value < min)
       return min;

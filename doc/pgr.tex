@@ -107,9 +107,12 @@ Zadáním bylo vytvořit program pro vhodně parametrizovatelné generování re
 Popište 3 věci, které jsou na vašem projektu nejlepší. Nejlépe ukažte a
 komentujte obrázky, v nejhorším případě vypište textově.
 
-\section{První věc}
+\section{Plynulá animace}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. In non condimentum augue, quis accumsan tellus. Sed sagittis mauris tortor, a varius ipsum feugiat sed. Morbi dapibus neque purus, id condimentum sem tincidunt quis. Sed lacinia a justo in rutrum. Nam a enim id urna cursus consectetur non a mi. Fusce vitae augue urna. Nunc nec malesuada enim, vitae blandit leo. Vestibulum et orci nibh. Phasellus in nisi rutrum, mattis metus vehicula, tempus neque.
+Náš program umožňuje nad rámec zadání generovat animaci oblohy, která
+může být buď mezi dvěma časovými úseky během dne, anebo během jednoho
+časového okamžiku -- animace potom ve smyčce spojitě navazuje díky
+spojitosti implementovaného 3D šumu.
 
 \begin{itemize}
     \item Položka 1
@@ -178,9 +181,6 @@ Vysvětlete je pomocí obrázků, schémat, vzorců apod.
 %---------------------------------------------------------------------------
 \section{Co bylo nejpracnější}
 
-Popište, co vám při řešení nejvíce komplikovalo život, s čím jste se museli
-potýkat, co zabralo čas.
-
 \paragraph{Rozsah:} 5-10 řádků
 
 \begin{itemize}
@@ -203,51 +203,46 @@ používá (barycentrické souřadnice, výpočty průsečíků).
 \item \textbf{\AuthorB}:
 \end{itemize}
 
-
 \paragraph{Rozsah:} formulujte stručně, uchopte cca 3-5 věcí
 
 %---------------------------------------------------------------------------
 \chapter{Autoevaluace}
 
-Ohodnoťte vaše řešení v jednotlivých kategoriích (0 – nic neuděláno,
-zoufalství, 100\% – dokonalost sama). Projekt, který ve finále obdrží plný
-počet bodů, může mít složky hodnocené i hodně nízko. Uvedení hodnot blízkých
-100\% ve všech nebo mnoha kategoriích může ukazovat na nepochopení problematiky nebo na snahu kamuflovat slabé stránky projektu. Bodově hodnocena bude i
-schopnost vnímat silné a slabé stránky svého řešení.
+\paragraph{Technický návrh (85\%):}
+Klíčové metody a~prostředky jsme si ujasnili před začátkem implementace
+poté, co jsme projekt konzultovali. Některé věci, jako např.
+supersampling, jsme přidávali až během implementace.
 
-\paragraph{Technický návrh (50\%):} (analýza, dekompozice problému, volba
-vhodných prostředků, $\ldots$)
-Většinu metod a~prostředků jsme si ujasnili před začátkem implementace
-poté, co jsme projekt konzultovali.
+\paragraph{Programování (70\%):}
+Kód jsme se snažili psát alespoň minimálně přehledně, objektově,
+modulárně a~komentovat jej způsobem kompatibilním se systémy
+pro automatické generování dokumentace. Bylo by možné
+dosáhnout podstatně kvalitnějšího kódu, to však nebylo naším primárním
+cílem.
 
-\paragraph{Programování (50\%):} (kvalita a čitelnost kódu, spolehlivost běhu,
-obecnost řešení, znovupoužitelnost, $\ldots$)
-Snažili jsme se podrobně komentovat kód, a~to způsobem kompatibilním se
-systémy pro automatické generování dokumentace. Využívá výhody objektové
-orientace, které nabízí jazyk C++.
+\paragraph{Vzhled vytvořeného řešení (90\%):}
+Vizuální výsledky hodnotíme s~ohledem na pracovní podmínky zdařile.
+Nedokonalosti v~obrázcích jsou znát např. na mracích, pro lepší výsledky
+by bylo možné použít lepší druh šumu (např. simplex noise).
 
-\paragraph{Vzhled vytvořeného řešení (50\%):} (uvěřitelnost zobrazení,
-estetická kvalita, vhled GUI, $\ldots$)
-Stručně (1-2 řádky) komentujte hodnocení.
-
-\paragraph{Využití zdrojů (50\%):} (využití existujícího kódu a dat, využití
-literatury, $\ldots$)
+\paragraph{Využití zdrojů (80\%):}
 Využili jsme kód pro práci s~rastrovou grafikou a~formátem PNG napsaný v~rámci
 bakalářské práce. Metody jsme zvolili na základě konzultace a~studia
 literatury.
 
-\paragraph{Hospodaření s časem (50\%):} (rovnoměrné dotažení částí projektu,
-míra spěchu, chybějící části řešení, $\ldots$)
-Stručně (1-2 řádky) komentujte hodnocení.
+\paragraph{Hospodaření s časem (90\%):}
+Pracovat jsme začali ihned po zadání, pokračovali jsme rovnoměrně.
 
-\paragraph{Spolupráce v týmu (50\%):} (komunikace, dodržování dohod, vzájemné
-spolehnutí, rovnoměrnost, $\ldots$)
+\paragraph{Spolupráce v týmu (80\%):}
 Snažili jsme se pracovat průběžně a práci každý týden konzultovat. Pro
 správu kódu jsme využili systém GIT.
 
-\paragraph{Celkový dojem (50\%):} (pracnost, získané dovednosti, užitečnost,
-volba zadání, cokoliv, $\ldots$)
-Stručně (5-10 řádků) komentujte hodnocení.
+\paragraph{Celkový dojem (90\%):}
+Zadání bylo podle nás z~programátorského hlediska průměrně náročné, ale
+mělo navíc umělecký aspekt, se kterým se na škole příliš nesetkáváme,
+proto jsme se díky projektu hodně naučili. Výsledný program je podle
+nás použitelný v~jednoduché umělecké grafice, např. pro generování pozadí
+pro videa apod.
 
 %---------------------------------------------------------------------------
 \chapter{Ovládání vytvořeného programu}
@@ -259,21 +254,26 @@ jste použili při tvorbě, atd. Text strukturujte, použijte odrážky,
 
 \paragraph{Rozsah:} odrážky, dle potřeby
 
-\begin{itemize}
-\item jazyky C/C++
-\item překladač gcc
-\end{itemize}
 
 \paragraph{Rozsah:} odrážky, dle potřeby
 
 \section{Obsluha programu}
-Stručně popište, jak se program ovládá (nejlépe odrážky rozdělené do
-kategorií). Pokud se ovládání odchyluje od zkratek a způsobů obvykle
-používaných v okýnkových nadstavbách operačních systémů, zdůvodněte, proč se
-tak děje.
 
-\paragraph{Rozsah:} odrážky nebo jednoduchý popis a odrážky
+Program se používá z~příkazové řádky následujícím způsobem:
+{\tt skygen [[-t time][-d duration][-f frames][-o name][-c amount][-x width][-y height][-p level][-s] | [-h]]}
 
+\begin{itemize}
+\item {\tt -t} specifikuje denní dobu ve 24hodinovém formátu {HH:MM}.
+\item {\tt -d} specifikuje trvání animace od dané denní doby celým číslem udávajícím počtet minut.
+\item {\tt -f} udává počet snímků animace.
+\item {\tt -o} říká, jaké bude jméno (jména) výstupního souboru.
+\item {\tt -x} zadává šířku generovaného obrázku v~pixelech.
+\item {\tt -y} zadává výšku generovaného obrázku v~pixelech.
+\item {\tt -p} specifikuje stupeň supersamplingu.
+\item {\tt -c} udává množství mraků celočíselnou hodnotou v~rozsahu 0 až 100.
+\item {\tt -s} vypíná výpis zpráv během generování obrázků.
+\item {\tt -h} zobrazí nápovědu.
+\end{itemize}
 
 %---------------------------------------------------------------------------
 \chapter{Doporučení pro budoucí zadávání projektů}
@@ -281,15 +281,6 @@ tak děje.
 Pozitivně hodnotíme volnost zadání projektů, která dávají prostor pro
 kreativitu, a~možnost přihlásit se v~řípadě zájmu na téma, které je již
 zabrané, čehož jsme sami využili.
-
-Co vám vyhovovalo a co nevyhovovalo na organizaci projektů? Které prvky by měly být zachovány, zesíleny, potlačeny, eliminovány?
-
-%---------------------------------------------------------------------------
-
-\chapter{Různé}
-
-Ještě něco by v dokumentaci mělo být? Napište to sem! Podle potřeby i založte
-novou kapitolu.
 
 %---------------------------------------------------------------------------
 
