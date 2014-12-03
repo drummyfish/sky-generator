@@ -13,12 +13,25 @@ using namespace std;
 
 #define PI 3.1415926535897932384626
 
-typedef struct         /**< point, also a vector */
+struct point_3D        /**< point, also a vector */
   {
     double x;
     double y;
     double z;
-  } point_3D;
+
+    // konstruktory
+    point_3D() : x(0.0), y(0.0), z(0.0) {};
+    point_3D(double x, double y, double z) : x(x), y(y), z(z) {};
+
+    point_3D cross_product(point_3D);
+    double dot_product(point_3D);
+    double vector_length();
+    void normalize();
+    double point_distance(point_3D);
+    double vectors_angle(point_3D);
+
+    point_3D operator - (point_3D src) { return point_3D(this->x - src.x, this->y - src.y, this->z - src.z); }
+  };
 
 typedef struct         /**< point, also a vector */
   {
@@ -26,7 +39,7 @@ typedef struct         /**< point, also a vector */
     double radius;
   } sphere_3D;
 
-typedef struct
+struct triangle_3D
   {
     point_3D a;        /**< position coordinates */
     point_3D b;
@@ -35,7 +48,14 @@ typedef struct
     point_3D a_t;      /**< texturing coordinates */
     point_3D b_t;
     point_3D c_t;
-  } triangle_3D;
+
+    triangle_3D(point_3D a, point_3D b, point_3D c) : a(a), b(b), c(c) {}
+    triangle_3D(point_3D a, point_3D b, point_3D c,
+    point_3D a_t, point_3D b_t, point_3D c_t) : a(a), b(b), c(c), a_t(a_t), b_t(b_t), c_t(c_t) {}
+
+    double area();
+    void get_uvw(double barycentric_a, double barycentric_b, double barycentric_c, double &u, double &v, double &w);
+  };
 
 class line_3D
   {
@@ -74,7 +94,7 @@ class line_3D
                   points towards it's origin
          */
 
-      void get_point(double t, point_3D &point);
+      point_3D get_point(double t);
 
         /**<
           Gets a point of this line by given parameter value.
@@ -115,22 +135,11 @@ class line_3D
          */
   };
 
-void print_point(point_3D point);
-point_3D make_point(double x, double y, double z);
 void make_color(unsigned char color[3],unsigned char r, unsigned char g, unsigned char b);
 double wrap(double value, double min, double max);
 double saturate(double value, double min, double max);
 int saturate_int(int value, int min, int max);
 double interpolate_linear(double value1, double value2, double ratio);
-void cross_product(point_3D vector1, point_3D vector2, point_3D &final_vector);
-void substract_vectors(point_3D vector1, point_3D vector2, point_3D &final_vector);
-double point_distance(point_3D a, point_3D b);
-double vector_length(point_3D vector);
-double dot_product(point_3D vector1, point_3D vector2);
-void normalize(point_3D &vector);
-double vectors_angle(point_3D vector1, point_3D vector2);
-void revert_vector(point_3D &vector);
-double triangle_area(triangle_3D triangle);
 void blend_colors(unsigned char color1[3], unsigned char color2[3], double ratio);
-void get_triangle_uvw(triangle_3D triangle, double barycentric_a, double barycentric_b, double barycentric_c, double &u, double &v, double &w);
+
 #endif
