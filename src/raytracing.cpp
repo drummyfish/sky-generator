@@ -1,9 +1,5 @@
 #include "raytracing.h"
 
-void print_point(point_3D point)
-  {
-    cout << "(" << point.x << ", " << point.y << ", " << point.z << ")" << endl;
-  }
 
 double saturate(double value, double min, double max)
   {
@@ -14,17 +10,6 @@ double saturate(double value, double min, double max)
       return max;
 
     return value;
-  }
-
-point_3D make_point(double x, double y, double z)
-  {
-    point_3D result;
-
-    result.x = x;
-    result.y = y;
-    result.z = z;
-
-    return result;
   }
 
 void make_color(unsigned char color[3],unsigned char r, unsigned char g, unsigned char b)
@@ -55,131 +40,7 @@ int saturate_int(int value, int min, int max)
 double interpolate_linear(double value1, double value2, double ratio)
   {
     ratio = saturate(ratio,0.0,1.0);
-    return ratio * value2 + (1 - ratio) * value1;
-  }
-
-void cross_product(point_3D vector1, point_3D vector2, point_3D &final_vector)
-  {
-    final_vector.x = vector1.y * vector2.z - vector1.z * vector2.y;
-    final_vector.y = vector1.z * vector2.x - vector1.x * vector2.z;
-    final_vector.z = vector1.x * vector2.y - vector1.y * vector2.x;
-  }
-
-void substract_vectors(point_3D vector1, point_3D vector2, point_3D &final_vector)
-  {
-    final_vector.x = vector1.x - vector2.x;
-    final_vector.y = vector1.y - vector2.y;
-    final_vector.z = vector1.z - vector2.z;
-  }
-
-double point_distance(point_3D a, point_3D b)
-  {
-    point_3D difference;
-
-    substract_vectors(a,b,difference);
-
-    return sqrt(difference.x * difference.x + difference.y * difference.y + difference.z * difference.z);
-  }
-
-double vector_length(point_3D vector)
-  {
-    return sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
-  }
-
-double dot_product(point_3D vector1, point_3D vector2)
-  {
-    return vector1.x * vector2.x + vector1.y * vector2.y + vector1.z * vector2.z;
-  }
-
-void normalize(point_3D &vector)
-  {
-    double length = vector_length(vector);
-
-    vector.x /= length;
-    vector.y /= length;
-    vector.z /= length;
-  }
-
-double vectors_angle(point_3D vector1, point_3D vector2)
-  {
-    normalize(vector1);
-    normalize(vector2);
-    return acos(dot_product(vector1,vector2));
-  }
-
-line_3D::line_3D(point_3D point1, point_3D point2)
-  {
-    this->c0 = point1.x;
-    this->q0 = point2.x - point1.x;
-    this->c1 = point1.y;
-    this->q1 = point2.y - point1.y;
-    this->c2 = point1.z;
-    this->q2 = point2.z - point1.z;
-  }
-
-void revert_vector(point_3D &vector)
-  {
-    vector.x *= -1;
-    vector.y *= -1;
-    vector.z *= -1;
-  }
-
-void line_3D::get_point(double t, point_3D &point)
-  {
-    point.x = this->c0 + this->q0 * t;
-    point.y = this->c1 + this->q1 * t;
-    point.z = this->c2 + this->q2 * t;
-  }
-
-double triangle_area(triangle_3D triangle)
-  {
-    double a_length, b_length, gamma;
-    point_3D a_vector, b_vector;
-
-    a_length = point_distance(triangle.a,triangle.b);
-    b_length = point_distance(triangle.a,triangle.c);
-
-    substract_vectors(triangle.b,triangle.a,a_vector);
-    substract_vectors(triangle.c,triangle.a,b_vector);
-
-    gamma = vectors_angle(a_vector,b_vector);
-
-    return 1/2.0 * a_length * b_length * sin(gamma);
-  }
-
-void get_triangle_uvw(triangle_3D triangle, double barycentric_a, double barycentric_b, double barycentric_c, double &u, double &v, double &w)
-  {
-    u = barycentric_a * triangle.a_t.x + barycentric_b * triangle.b_t.x + barycentric_c * triangle.c_t.x;
-    v = barycentric_a * triangle.a_t.y + barycentric_b * triangle.b_t.y + barycentric_c * triangle.c_t.y;
-    w = barycentric_a * triangle.a_t.z + barycentric_b * triangle.b_t.z + barycentric_c * triangle.c_t.z;
-  }
-
-bool line_3D::intersects_sphere(sphere_3D sphere)
-  {
-    double a,b,c;
-
-    a = this->q0 * this->q0 + this->q1 * this->q1 + this->q2 * this->q2;
-    b = 2 * this->c0 * this->q0 - 2 * sphere.center.x * this->q0 +
-        2 * this->c1 * this->q1 - 2 * sphere.center.y * this->q1 +
-        2 * this->c2 * this->q2 - 2 * sphere.center.z * this->q2;
-    c = this->c0 * this->c0 + this->c1 * this->c1 + this->c2 * this->c2 -
-        2 * sphere.center.x * this->c0 - 2 * sphere.center.y * this->c1 - 2 * sphere.center.z * this->c2 +
-        sphere.center.x * sphere.center.x + sphere.center.y * sphere.center.y + sphere.center.z * sphere.center.z -
-        sphere.radius * sphere.radius;
-
-    return b * b - 4 * a * c >= 0;
-  }
-
-point_3D line_3D::get_vector_to_origin()
-  {
-    point_3D a,b,result;
-
-    this->get_point(0,a);
-    this->get_point(1,b);
-    substract_vectors(b,a,result);
-
-    normalize(result);
-    return result;
+    return ratio * (value2 - value1) + value1; // rychlejsi nez ratio * value2 + (1 - ratio) * value1;
   }
 
 double wrap(double value, double min, double max)
@@ -198,6 +59,128 @@ double wrap(double value, double min, double max)
     return value;
   }
 
+// Metody point3D
+
+// vektorovy soucin
+point_3D point_3D::cross_product(point_3D src) {
+    return point_3D(this->y * src.z - this->z * src.y,
+        this->z * src.x - this->x * src.z,
+        this->x * src.y - this->y * src.x);
+}
+
+// skalarni soucin
+double point_3D::dot_product(point_3D src)
+{
+    return this->x * src.x + this->y * src.y + this->z * src.z;
+}
+
+// vzdalenost bodu od pocatku souradnic
+double point_3D::vector_length()
+  {
+    return sqrt(this->dot_product(*this));
+  }
+
+// vzdalenost od druheho bodu
+double point_3D::point_distance(point_3D src)
+  {
+    return (*this - src).vector_length();
+  }
+
+// normalizace delky vektoru
+void point_3D::normalize()
+  {
+    double length = this->vector_length();
+    this->x /= length;
+    this->y /= length;
+    this->z /= length;
+  }
+
+// uhel mezi vektory
+double point_3D::vectors_angle(point_3D src)
+  {
+    return acos(this->dot_product(src) / this->vector_length() / src.vector_length());
+  }
+
+// Metody triangle_3D
+
+// vraci obsah trojuhelnika
+double triangle_3D::area()
+  {
+    double a_length, b_length, gamma;
+    point_3D a_vector, b_vector;
+
+    a_length = this->a.point_distance(this->b);
+    b_length = this->a.point_distance(this->c);
+
+    a_vector = this->b - this->a;
+    b_vector = this->c - this->a;
+
+    gamma = a_vector.vectors_angle(b_vector);
+
+    return 1/2.0 * a_length * b_length * sin(gamma);
+  }
+
+// TODO: co to dela?
+void triangle_3D::get_uvw(double barycentric_a, double barycentric_b, double barycentric_c, double &u, double &v, double &w)
+  {
+    u = barycentric_a * this->a_t.x + barycentric_b * this->b_t.x + barycentric_c * this->c_t.x;
+    v = barycentric_a * this->a_t.y + barycentric_b * this->b_t.y + barycentric_c * this->c_t.y;
+    w = barycentric_a * this->a_t.z + barycentric_b * this->b_t.z + barycentric_c * this->c_t.z;
+  }
+
+// Metody line_3D
+
+// konstruktor
+line_3D::line_3D(point_3D point1, point_3D point2)
+  {
+    this->c0 = point1.x;
+    this->q0 = point2.x - point1.x;
+    this->c1 = point1.y;
+    this->q1 = point2.y - point1.y;
+    this->c2 = point1.z;
+    this->q2 = point2.z - point1.z;
+  }
+
+// vraci bod na primce dany parametrem t
+point_3D line_3D::get_point(const double t)
+  {
+    return point_3D(
+        this->c0 + this->q0 * t,
+        this->c1 + this->q1 * t,
+        this->c2 + this->q2 * t);
+  }
+
+// vraci true pokud primka protina kouli sphere
+bool line_3D::intersects_sphere(sphere_3D sphere)
+  {
+    double a,b,c;
+
+    a = this->q0 * this->q0 + this->q1 * this->q1 + this->q2 * this->q2;
+    b = 2 * this->c0 * this->q0 - 2 * sphere.center.x * this->q0 +
+        2 * this->c1 * this->q1 - 2 * sphere.center.y * this->q1 +
+        2 * this->c2 * this->q2 - 2 * sphere.center.z * this->q2;
+    c = this->c0 * this->c0 + this->c1 * this->c1 + this->c2 * this->c2 -
+        2 * sphere.center.x * this->c0 - 2 * sphere.center.y * this->c1 - 2 * sphere.center.z * this->c2 +
+        sphere.center.x * sphere.center.x + sphere.center.y * sphere.center.y + sphere.center.z * sphere.center.z -
+        sphere.radius * sphere.radius;
+
+    return b * b - 4 * a * c >= 0;
+  }
+
+// vraci smerovy vektor primky
+point_3D line_3D::get_vector_to_origin()
+  {
+    point_3D a,b,result;
+
+    a = this->get_point(0);
+    b = this->get_point(1);
+    result = b - a;
+
+    result.normalize();
+    return result;
+  }
+
+
 bool line_3D::intersects_triangle(triangle_3D triangle, double &a, double &b, double &c, double &t)
   {
     point_3D vector1,vector2,vector3,normal;
@@ -206,10 +189,10 @@ bool line_3D::intersects_triangle(triangle_3D triangle, double &a, double &b, do
     b = 0.0;
     c = 0.0;
 
-    substract_vectors(triangle.a,triangle.b,vector1);
-    substract_vectors(triangle.a,triangle.c,vector2);
+    vector1 = triangle.a - triangle.b;
+    vector2 = triangle.a - triangle.c;
 
-    cross_product(vector1,vector2,normal);
+    normal = vector1.cross_product(vector2);
 
     /*
      Compute general plane equation in form
@@ -237,48 +220,34 @@ bool line_3D::intersects_triangle(triangle_3D triangle, double &a, double &b, do
 
     point_3D intersection;
 
-    this->get_point(t,intersection);  // intersection in 3D space
+    intersection = this->get_point(t);  // intersection in 3D space
 
     // vectors from the intersection to each triangle vertex:
 
-    substract_vectors(triangle.a,intersection,vector1);
-    substract_vectors(triangle.b,intersection,vector2);
-    substract_vectors(triangle.c,intersection,vector3);
+    vector1 = triangle.a - intersection;
+    vector2 = triangle.b - intersection;
+    vector3 = triangle.c - intersection;
 
     point_3D normal1, normal2, normal3;
 
     // now multiply the vectors to get their normals:
 
-    cross_product(vector1,vector2,normal1);
-    cross_product(vector2,vector3,normal2);
-    cross_product(vector3,vector1,normal3);
+    normal1 = vector1.cross_product(vector2);
+    normal2 = vector2.cross_product(vector3);
+    normal3 = vector3.cross_product(vector1);
 
     // if one of the vectors points in other direction than the others, the point is not inside the triangle:
 
-    if (dot_product(normal1,normal2) < 0 || dot_product(normal2,normal3) < 0)
+    if (normal1.dot_product(normal2) < 0 || normal2.dot_product(normal3) < 0)
       return false;
 
     // now compute the barycentric coordinates:
 
-    triangle_3D helper_triangle;
-    double total_area;
+    double total_area = triangle.area();
 
-    total_area = triangle_area(triangle);
-
-    helper_triangle.a = intersection;
-    helper_triangle.b = triangle.b;
-    helper_triangle.c = triangle.c;
-    a = triangle_area(helper_triangle) / total_area;
-
-    helper_triangle.a = triangle.a;
-    helper_triangle.b = intersection;
-    helper_triangle.c = triangle.c;
-    b = triangle_area(helper_triangle) / total_area;
-
-    helper_triangle.a = triangle.a;
-    helper_triangle.b = triangle.b;
-    helper_triangle.c = intersection;
-    c = triangle_area(helper_triangle) / total_area;
+    a = triangle_3D(intersection, triangle.b, triangle.c).area()/total_area;
+    b = triangle_3D(triangle.a, intersection, triangle.c).area()/total_area;
+    c = triangle_3D(triangle.a, triangle.b, intersection).area()/total_area;
 
     return true;
   }

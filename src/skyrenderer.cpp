@@ -164,58 +164,29 @@ void sky_renderer::draw_stars(t_color_buffer *buffer, unsigned int number_of_sta
 
 void sky_renderer::setup_sky_planes(vector<triangle_3D> *lower_plane, vector<triangle_3D> *upper_plane)
   {
-    point_3D p1,p2,p3,p4,pt1,pt2,pt3,pt4;
-    triangle_3D triangle;
+    // lower skyplane
+    point_3D p1(-14.0, 0.0, -1.0); // souradnice
+    point_3D p2( 14.0, 0.0, -1.0);
+    point_3D p3(-20.0, 20.0, 11.0);
+    point_3D p4( 20.0, 20.0, 11.0);
+    point_3D pt1(0.0, 0.0, 0.0); // texturovaci souradnice
+    point_3D pt2(0.75, 0.0, 0.0);
+    point_3D pt3(0.0, 0.75, 0.0);
+    point_3D pt4(0.75, 0.75, 0.0);
+    lower_plane->push_back(triangle_3D(p1, p2, p3, pt1, pt2, pt3));
+    lower_plane->push_back(triangle_3D(p2, p3, p4, pt2, pt3, pt4));
 
-    p1.x = -14;   p1.y = 0;   p1.z = -1;    // lower sky plane geometry
-    p2.x = 14;    p2.y = 0;   p2.z = -1;
-    p3.x = -20;   p3.y = 20;  p3.z = 11;
-    p4.x = 20;    p4.y = 20;  p4.z = 11;
-    pt1.x = 0;    pt1.y = 0;                // texture coordinates
-    pt2.x = 0.75; pt2.y = 0;
-    pt3.x = 0;    pt3.y = 0.75;
-    pt4.x = 0.75; pt4.y = 0.75;
-
-    triangle.a = p1;
-    triangle.b = p2;
-    triangle.c = p3;
-    triangle.a_t = pt1;
-    triangle.b_t = pt2;
-    triangle.c_t = pt3;
-    lower_plane->push_back(triangle);
-
-    triangle.a = p2;
-    triangle.b = p3;
-    triangle.c = p4;
-    triangle.a_t = pt2;
-    triangle.b_t = pt3;
-    triangle.c_t = pt4;
-    lower_plane->push_back(triangle);
-
-    p1.x = -14;   p1.y = 0;   p1.z = -2;    // upper sky plane geometry
-    p2.x = 14;    p2.y = 0;   p2.z = -2;
-    p3.x = -21;   p3.y = 20;  p3.z = 11;
-    p4.x = 21;    p4.y = 20;  p4.z = 11;
-    pt1.x = 0;    pt1.y = 0;                // texture coordinates
-    pt2.x = 2;    pt2.y = 0;
-    pt3.x = 0;    pt3.y = 2;
-    pt4.x = 2;    pt4.y = 2;
-
-    triangle.a = p1;
-    triangle.b = p2;
-    triangle.c = p3;
-    triangle.a_t = pt1;
-    triangle.b_t = pt2;
-    triangle.c_t = pt3;
-    upper_plane->push_back(triangle);
-
-    triangle.a = p2;
-    triangle.b = p3;
-    triangle.c = p4;
-    triangle.a_t = pt2;
-    triangle.b_t = pt3;
-    triangle.c_t = pt4;
-    upper_plane->push_back(triangle);
+    // upper skyplane
+    p1 = point_3D(-14.0, 0.0, -2.0); // souradnice
+    p2 = point_3D( 14.0, 0.0, -2.0);
+    p3 = point_3D(-21.0, 20.0, 11.0);
+    p4 = point_3D( 21.0, 20.0, 11.0);
+    pt1 = point_3D(0.0, 0.0, 0.0); // texturovaci souradnice
+    pt2 = point_3D(2.0, 0.0, 0.0);
+    pt3 = point_3D(0.0, 2.0, 0.0);
+    pt4 = point_3D(2.0, 2.0, 0.0);
+    upper_plane->push_back(triangle_3D(p1, p2, p3, pt1, pt2, pt3));
+    upper_plane->push_back(triangle_3D(p2, p3, p4, pt2, pt3, pt4));
   }
 
 double sky_renderer::get_star_intensity(double day_time)
@@ -358,8 +329,6 @@ void sky_renderer::render_sky(t_color_buffer *buffer, double time_of_day, double
 
     aspect_ratio = buffer->height / ((double) buffer->width);
 
-    p1 = make_point(0,0,0);       // point to cast the rays from
-
     sphere_3D sun_moon;
     get_sun_moon_attributes(time_of_day,sun_moon,sun_moon_color);
 
@@ -383,7 +352,7 @@ void sky_renderer::render_sky(t_color_buffer *buffer, double time_of_day, double
               continue;
 
             // point at the projection plane, 0.4 is focal distance
-            p2 = make_point(((i / ((double) buffer->width)) - 0.5),0.4,((j / ((double) buffer->height)) - 0.5) * aspect_ratio);
+            p2 = point_3D(((i / ((double) buffer->width)) - 0.5),0.4,((j / ((double) buffer->height)) - 0.5) * aspect_ratio);
 
             line_3D line(p1,p2);                                        // make the ray line
 
@@ -411,7 +380,7 @@ void sky_renderer::render_sky(t_color_buffer *buffer, double time_of_day, double
                 for (k = 0; k < plane->size(); k++)                     // for all triangles of the sky plane
                   if (line.intersects_triangle((*plane)[k],barycentric_a,barycentric_b,barycentric_c,t))
                   {
-                    get_triangle_uvw((*plane)[k],barycentric_a,barycentric_b,barycentric_c,u,v,w);
+                    (*plane)[k].get_uvw(barycentric_a,barycentric_b,barycentric_c,u,v,w);
 
                     u = wrap(u + offset + time_of_day * 2,0,1);
                     v = wrap(v + offset + time_of_day * 2,0,1);
@@ -421,11 +390,11 @@ void sky_renderer::render_sky(t_color_buffer *buffer, double time_of_day, double
 
                     cloud_intensity_to_color(f,clouds,density,cloud_color);   // maps f to [r,g,b] with threshold
 
-                    line.get_point(t,intersection);
-                    substract_vectors(sun_moon.center,intersection,to_sun);
-                    normalize(to_sun);
+                    intersection = line.get_point(t);
+                    to_sun = sun_moon.center - intersection;
+                    to_sun.normalize();
                     to_camera = line.get_vector_to_origin();
-                    sun_intensity = get_sun_intensity(dot_product(to_sun,to_camera),time_of_day);
+                    sun_intensity = get_sun_intensity(to_sun.dot_product(to_camera), time_of_day);
 
                     color_buffer_add_pixel(buffer,i,j,cloud_color[0] * sun_intensity,cloud_color[1] * sun_intensity,cloud_color[2] * sun_intensity);
                   }
