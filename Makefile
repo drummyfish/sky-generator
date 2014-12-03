@@ -1,5 +1,5 @@
 CXX=c++
-CXXFLAGS=-pedantic -Wall -std=c++11 -g -O2 -MMD # -pg
+CXXFLAGS=-pedantic -Wall -std=c++11 -g -O2 -MMD -fopenmp # -pg
 
 SRCDIR=src
 OBJFILES=$(SRCDIR)/main.o $(SRCDIR)/colorbuffer.o $(SRCDIR)/lodepng.o $(SRCDIR)/perlin.o $(SRCDIR)/raytracing.o $(SRCDIR)/skyrenderer.o

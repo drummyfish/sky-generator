@@ -297,8 +297,11 @@ void sky_renderer::cloud_intensity_to_color(double intensity, double threshold, 
       }
   }
 
-void sky_renderer::render_sky(t_color_buffer *buffer, double time_of_day, double clouds, double density, double offset)
+void sky_renderer::render_sky(t_color_buffer *buffer, double time_of_day, const double clouds, const double density, const double offset)
   {
+
+    #pragma omp parallel default(none) firstprivate(time_of_day, clouds, density, offset) shared(buffer)
+    {
     unsigned int i,j,k,l,sun_pixel_count;
     point_3D p1, p2, intersection, to_sun, to_camera;
     double u, v, w, t, star_intensity, sun_intensity, aspect_ratio, barycentric_a, barycentric_b, barycentric_c;
@@ -334,6 +337,7 @@ void sky_renderer::render_sky(t_color_buffer *buffer, double time_of_day, double
 
     sun_pixel_count = 0;
 
+    #pragma omp for
     for (j = 0; j < buffer->height; j++)            // for each picture line
       {
         // make the background color from gradient:
@@ -401,7 +405,9 @@ void sky_renderer::render_sky(t_color_buffer *buffer, double time_of_day, double
               }
           }
       }
+    
 
+    #pragma omp single
     if (sun_pixel_count > 10)  // postprocessing: only do this if something of the sun/moon is actually visible to save time
       {
         fast_blur(&sun_stencil);
@@ -416,4 +422,7 @@ void sky_renderer::render_sky(t_color_buffer *buffer, double time_of_day, double
       }
 
     color_buffer_destroy(&sun_stencil);
+
+    } // omp parallel end
+        
   }
