@@ -306,7 +306,7 @@ void sky_renderer::render_sky(t_color_buffer *buffer, double time_of_day, double
     vector<triangle_3D> sky_plane, sky_plane2;                          // triangles that make up the lower/upper sky plane
     unsigned char background_color_from[3], background_color_to[3], sun_moon_color[3], cloud_color[3];
     t_color_buffer stars, sun_stencil;
-    unsigned char color1[3], color2[3], terrain_color1[3], terrain_color2[3];
+    unsigned char terrain_color1[3], terrain_color2[3];
 
     color_buffer_clear(buffer);
 
@@ -315,9 +315,9 @@ void sky_renderer::render_sky(t_color_buffer *buffer, double time_of_day, double
     make_color(terrain_color1,50,200,10);     // terraing color gradient
     make_color(terrain_color2,70,100,0);
     make_background_gradient(background_color_from,background_color_to,time_of_day);
-    blend_colors(color1,terrain_color1,0.65);                                           // slightly alter the terrain color with background color
-    blend_colors(color2,terrain_color2,0.9);
-    draw_terrain(buffer,color2[0],color2[1],color2[2],color1[0],color1[1],color1[2]);   // draw the terrain before rendering the sky
+    blend_colors(terrain_color1,background_color_to,0.2);                                           // slightly alter the terrain color with background color
+    blend_colors(terrain_color2,background_color_from,0.4);
+    draw_terrain(buffer,terrain_color2[0],terrain_color2[1],terrain_color2[2],terrain_color1[0],terrain_color1[1],terrain_color1[2]);   // draw the terrain before rendering the sky
 
     setup_sky_planes(&sky_plane,&sky_plane2);
     star_intensity = get_star_intensity(time_of_day);
