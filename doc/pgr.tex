@@ -104,8 +104,8 @@ Zadáním bylo vytvořit program pro vhodně parametrizovatelné generování re
 %---------------------------------------------------------------------------
 \chapter{Nejdůležitější dosažené výsledky}
 
-Popište 3 věci, které jsou na vašem projektu nejlepší. Nejlépe ukažte a
-komentujte obrázky, v nejhorším případě vypište textově.
+% Popište 3 věci, které jsou na vašem projektu nejlepší. Nejlépe ukažte a
+% komentujte obrázky, v nejhorším případě vypište textově.
 
 \section{Plynulá animace}
 
@@ -114,22 +114,47 @@ může být buď mezi dvěma časovými úseky během dne, anebo během jednoho
 časového okamžiku -- animace potom ve smyčce spojitě navazuje díky
 spojitosti implementovaného 3D šumu.
 
-\begin{itemize}
-    \item Položka 1
-    \begin{itemize}
-        \item Podpoložka 1.1
-        \item Podpoložka 1.2
-        \item $\ldots$
-    \end{itemize}
-    \item Položka 2
-    \item $\ldots$
-\end{itemize}
+\begin{figure}[h] \centering
+        \includegraphics[width=10cm]{images/navazujici_sum.png}
+    \caption{Navazující šum v prostoru} \label{fig:noise_cont_space}
+\end{figure}
 
-\begin{center}
-    \captionsetup{type=figure}
-        \includegraphics[width=10cm]{images/sample.jpg}
-    \captionof{figure}{Popisek vzorového obrázek}
-\end{center}
+To, že generovaná procedurální 3D textura na sebe navazuje ve všech třech osách,
+jak je vidět na obrázcích \ref{fig:noise_cont_space} a \ref{fig:noise_cont_time},
+nám umožnilo texturou posouvat a simulovat tím pohyb mraků vlivem větru.
+Návaznost textury v čase zase způsobuje plynulou proměnlivost tvaru a velikosti
+mraků.
+
+\begin{figure}[h] \centering
+        \includegraphics[width=\textwidth]{images/sum123.png}
+    \caption{Navazující šum v čase} \label{fig:noise_cont_time}
+\end{figure}
+
+\section{Zobrazení různé denní doby}
+
+Samotná obloha je obarvena barevným přechodem, který se mení pro různou denní
+dobu. Mezi těmito přechody se v průběhu dne postupně interpoluje a vzniká
+tak efekt červánků při svítání a západu slunce, ve dne je obloha světle modrá
+a v noci je tma.
+
+Toto celé ještě doplňuje Slunce a Měsíc
+
+
+\begin{figure}[h] \centering
+        \includegraphics[width=0.5\textwidth]{images/sky0.png}
+    \caption{Obloha ve dne} \label{fig:sky_day}
+\end{figure}
+
+\begin{figure}[h] \centering
+        \includegraphics[width=0.5\textwidth]{images/sky1.png}
+    \caption{Obloha večer} \label{fig:sky_evening}
+\end{figure}
+
+\begin{figure}[h] \centering
+        \includegraphics[width=0.5\textwidth]{images/sky2.png}
+    \caption{Obloha během svítání} \label{fig:sky_dawn}
+\end{figure}
+
 
 \section{Paralelizace}
 
@@ -137,26 +162,10 @@ Z důvodu poměrně pomalého zpracování snímku jsme se rozhodli výpočet
 urychlit paralelním zpracováním. K paralelizaci jsme použili OpenMP,
 které vytvoři několik vláken z rozdělí mezi ně výpočet různých
 částí snímku.
+
 Takto se nám podařilo dosáhnout zrychlení 1.83 při zpracování dvěma
 vlákny.
 
-\begin{table}[h!]
-    \begin{center}
-    \begin{tabular}{ | p{3.5cm} | p{3.5cm} | p{3.5cm} | p{3.5cm} |}
-    \hline
-    Sloupec A & Sloupec B & Sloupec C & Sloupec D
-    \\ \hline
-
-    A1 & B1 & C1 & D1
-    \\ \hline
-
-    A2 & B2 & C2 & D2
-    \\ \hline
-
-    \end{tabular}
-    \end{center}
-    \caption{Vzorová tabulka}
-\end{table}
 
 \section{Třetí věc}
 
@@ -167,12 +176,20 @@ Vestibulum ac tellus et massa facilisis tristique in in ante. In elementum luctu
 %---------------------------------------------------------------------------
 \chapter{Zvláštní použité znalosti}
 
-Uveďte informace, které byly potřeba nad rámec výuky probírané na FIT.
-Vysvětlete je pomocí obrázků, schémat, vzorců apod.
+% Uveďte informace, které byly potřeba nad rámec výuky probírané na FIT.
+% Vysvětlete je pomocí obrázků, schémat, vzorců apod.
 
-3D perlinův šum, paralelizace
+Perlinův šum\cite{cite1, cite2} jsme použili k zobrazení mraků na obloze. Jde
+o šum, který vzniká jako součet několika různých náhodných signálů s různou
+frekvencí a amlitudou.
 
-\paragraph{Rozsah:} podle potřeby a vlastního uvážení
+Implementace navazující textury interpolací krajních bodů přes okraj.
+
+% paralelizace neni pro nad ramec FIT
+
+
+
+% \paragraph{Rozsah:} podle potřeby a vlastního uvážení
 
 
 %---------------------------------------------------------------------------
@@ -186,14 +203,16 @@ Vysvětlete je pomocí obrázků, schémat, vzorců apod.
 %---------------------------------------------------------------------------
 \section{Co bylo nejpracnější}
 
-\paragraph{Rozsah:} 5-10 řádků
+% \paragraph{Rozsah:} 5-10 řádků
 
 \begin{itemize}
 \item \textbf{\AuthorA}: Sestavit scénu a nastavit její parametry tak,
 aby výstup alespoň trochu připomínal realitu.
 \item \textbf{\AuthorB}: Najít vhodné parametry pro funkci, která generuje
 Perlinův šum, aby výsledek nevypadal jako jediný mrak přes celou oblohu,
-ale aby vznikala i místa, kterými prosvítá obloha.
+ale aby vznikala i místa, kterými prosvítá obloha. Problém totiž byl, že vyšší
+frekvence v Perlinově šumu byly příliš utlumeny a neměly tak dostatečný vliv
+na podobu výsledného signálu.
 \end{itemize}
 
 %---------------------------------------------------------------------------
@@ -210,7 +229,7 @@ procedurálních textur a jejich mapování do scény. Vyzkoušeli jsme si
 řešení konfliktů v systému GIT. Naučil jsem se pracovat s knihovnou SDL.
 \end{itemize}
 
-\paragraph{Rozsah:} formulujte stručně, uchopte cca 3-5 věcí
+% \paragraph{Rozsah:} formulujte stručně, uchopte cca 3-5 věcí
 
 %---------------------------------------------------------------------------
 \chapter{Autoevaluace}
