@@ -242,6 +242,7 @@ void sky_renderer::fast_blur(t_color_buffer *buffer)
     color_buffer_copy(buffer,&helper_buffer);
 
     for (j = 0; j < buffer->height; j++)
+      #pragma omp for
       for (i = 0; i < buffer->width; i++)
         {
           color1 = false;
@@ -300,15 +301,18 @@ void sky_renderer::cloud_intensity_to_color(double intensity, double threshold, 
 void sky_renderer::render_sky(t_color_buffer *buffer, double time_of_day, const double clouds, const double density, const double offset)
   {
 
-    #pragma omp parallel default(none) firstprivate(time_of_day, clouds, density, offset) shared(buffer)
+    t_color_buffer stars, sun_stencil;
+    color_buffer_init(&stars,buffer->width,buffer->height);             // buffer to which stars will be drawn
+    color_buffer_init(&sun_stencil,buffer->width,buffer->height);       // buffer to which sun stencil will be drawn
+
+    #pragma omp parallel default(none) firstprivate(time_of_day, clouds, density, offset) shared(buffer, sun_stencil, stars)
     {
-    unsigned int i,j,k,l,sun_pixel_count;
+    unsigned int i,j,k,l;
     point_3D p1, p2, intersection, to_sun, to_camera;
     double u, v, w, t, star_intensity, sun_intensity, aspect_ratio, barycentric_a, barycentric_b, barycentric_c;
     unsigned char r, g, b;
     vector<triangle_3D> sky_plane, sky_plane2;                          // triangles that make up the lower/upper sky plane
     unsigned char background_color_from[3], background_color_to[3], sun_moon_color[3], cloud_color[3];
-    t_color_buffer stars, sun_stencil;
     unsigned char terrain_color1[3], terrain_color2[3];
 
     color_buffer_clear(buffer);
@@ -320,14 +324,13 @@ void sky_renderer::render_sky(t_color_buffer *buffer, double time_of_day, const 
     make_background_gradient(background_color_from,background_color_to,time_of_day);
     blend_colors(terrain_color1,background_color_to,0.2);                                           // slightly alter the terrain color with background color
     blend_colors(terrain_color2,background_color_from,0.4);
+
     draw_terrain(buffer,terrain_color2[0],terrain_color2[1],terrain_color2[2],terrain_color1[0],terrain_color1[1],terrain_color1[2]);   // draw the terrain before rendering the sky
 
     setup_sky_planes(&sky_plane,&sky_plane2);
     star_intensity = get_star_intensity(time_of_day);
 
-    color_buffer_init(&stars,buffer->width,buffer->height);             // buffer to which stars will be drawn
-    color_buffer_init(&sun_stencil,buffer->width,buffer->height);       // buffer to which sun stencil will be drawn
-
+    #pragma omp master
     draw_stars(&stars,1000);
 
     aspect_ratio = buffer->height / ((double) buffer->width);
@@ -335,9 +338,6 @@ void sky_renderer::render_sky(t_color_buffer *buffer, double time_of_day, const 
     sphere_3D sun_moon;
     get_sun_moon_attributes(time_of_day,sun_moon,sun_moon_color);
 
-    sun_pixel_count = 0;
-
-    #pragma omp for
     for (j = 0; j < buffer->height; j++)            // for each picture line
       {
         // make the background color from gradient:
@@ -348,6 +348,7 @@ void sky_renderer::render_sky(t_color_buffer *buffer, double time_of_day, const 
         back_g = interpolate_linear(background_color_from[1],background_color_to[1],ratio);
         back_b = interpolate_linear(background_color_from[2],background_color_to[2],ratio);
 
+        #pragma omp for
         for (i = 0; i < buffer->width; i++)        // for each picture column
           {
             color_buffer_get_pixel(buffer,i,j,&r,&g,&b);
@@ -372,7 +373,6 @@ void sky_renderer::render_sky(t_color_buffer *buffer, double time_of_day, const 
               {
                 color_buffer_set_pixel(buffer,i,j,sun_moon_color[0],sun_moon_color[1],sun_moon_color[2]);
                 color_buffer_set_pixel(&sun_stencil,i,j,0,0,0);
-                sun_pixel_count++;
               }
 
             for (l = 0; l < 2; l++)   // for both sky planes
@@ -406,23 +406,19 @@ void sky_renderer::render_sky(t_color_buffer *buffer, double time_of_day, const 
           }
       }
     
+    fast_blur(&sun_stencil);
 
-    #pragma omp single
-    if (sun_pixel_count > 10)  // postprocessing: only do this if something of the sun/moon is actually visible to save time
-      {
-        fast_blur(&sun_stencil);
-
-        for (j = 0; j < buffer->height; j++)
-          for (i = 0; i < buffer->width; i++)
-            {
-              color_buffer_get_pixel(&sun_stencil,i,j,&r,&g,&b);
-              r = (255 - r) * 0.75;
-              color_buffer_add_pixel(buffer,i,j,r,r,r);
-            }
-      }
-
-    color_buffer_destroy(&sun_stencil);
+    for (j = 0; j < buffer->height; j++)
+      #pragma omp for
+      for (i = 0; i < buffer->width; i++)
+        {
+          color_buffer_get_pixel(&sun_stencil,i,j,&r,&g,&b);
+          r = (255 - r) * 0.75;
+          color_buffer_add_pixel(buffer,i,j,r,r,r);
+        }
 
     } // omp parallel end
+
+    color_buffer_destroy(&sun_stencil);
         
   }
