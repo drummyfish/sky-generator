@@ -120,25 +120,24 @@ spojitosti implementovaného 3D šumu.
 \end{figure}
 
 To, že generovaná procedurální 3D textura na sebe navazuje ve všech třech osách,
-jak je vidět na obrázcích \ref{fig:noise_cont_space} a \ref{fig:noise_cont_time},
-nám umožnilo texturou posouvat a simulovat tím pohyb mraků vlivem větru.
-Návaznost textury v čase zase způsobuje plynulou proměnlivost tvaru a velikosti
+jak je vidět na obrázcích \ref{fig:noise_cont_space} a~\ref{fig:noise_cont_time},
+nám umožnilo texturou posouvat a~simulovat tím pohyb mraků vlivem větru.
+Návaznost textury v~čase zase způsobuje plynulou proměnlivost tvaru a~velikosti
 mraků.
 
 \begin{figure}[h] \centering
         \includegraphics[width=\textwidth]{images/sum123.png}
-    \caption{Navazující šum v čase} \label{fig:noise_cont_time}
+    \caption{Navazující šum v~čase} \label{fig:noise_cont_time}
 \end{figure}
 
 \section{Zobrazení různé denní doby}
 
 Samotná obloha je obarvena barevným přechodem, který se mení pro různou denní
-dobu. Mezi těmito přechody se v průběhu dne postupně interpoluje a vzniká
-tak efekt červánků při svítání a západu slunce, ve dne je obloha světle modrá
-a v noci je tma.
+dobu. Mezi těmito přechody se v~průběhu dne postupně interpoluje a~vzniká
+tak efekt červánků při svítání a~západu slunce, ve dne je obloha světle modrá
+a~v~noci je tma.
 
-Toto celé ještě doplňuje Slunce a Měsíc
-
+Toto celé ještě doplňuje Slunce a~Měsíc.
 
 \begin{figure}[h] \centering
         \includegraphics[width=0.5\textwidth]{images/sky0.png}
@@ -158,20 +157,13 @@ Toto celé ještě doplňuje Slunce a Měsíc
 
 \section{Paralelizace}
 
-Z důvodu poměrně pomalého zpracování snímku jsme se rozhodli výpočet
+Z~důvodu poměrně pomalého zpracování snímku jsme se rozhodli výpočet
 urychlit paralelním zpracováním. K paralelizaci jsme použili OpenMP,
-které vytvoři několik vláken z rozdělí mezi ně výpočet různých
+které vytvoří několik vláken a~rozdělí mezi ně výpočet různých
 částí snímku.
 
-Takto se nám podařilo dosáhnout zrychlení 1.83 při zpracování dvěma
+Takto se nám podařilo dosáhnout zrychlení 1,83 při zpracování dvěma
 vlákny.
-
-
-\section{Třetí věc}
-
-Vestibulum ac tellus et massa facilisis tristique in in ante. In elementum luctus ante, id cursus nulla. Quisque sit amet dolor dui. Suspendisse bibendum auctor augue, a posuere enim dictum non. Nunc iaculis libero eget interdum egestas. Suspendisse pretium cursus massa vel fringilla.
-
-
 
 %---------------------------------------------------------------------------
 \chapter{Zvláštní použité znalosti}
@@ -180,24 +172,20 @@ Vestibulum ac tellus et massa facilisis tristique in in ante. In elementum luctu
 % Vysvětlete je pomocí obrázků, schémat, vzorců apod.
 
 Perlinův šum\cite{cite1, cite2} jsme použili k zobrazení mraků na obloze. Jde
-o šum, který vzniká jako součet několika různých náhodných signálů s různou
-frekvencí a amlitudou.
+o~šum, který vzniká jako součet několika různých náhodných signálů s~různou
+frekvencí a~amlitudou.
 
 Implementace navazující textury interpolací krajních bodů přes okraj.
 
 % paralelizace neni pro nad ramec FIT
-
-
-
 % \paragraph{Rozsah:} podle potřeby a vlastního uvážení
-
 
 %---------------------------------------------------------------------------
 \chapter{Práce na projektu}
 
 \begin{itemize}
 \item \textbf{\AuthorA}: implementace sledování paprsku, vykreslení pozadí a~krajiny, hlavní program, dokumentace
-\item \textbf{\AuthorB}: implementace Perlinova šumu, animace, paralelizace, optimalizace
+\item \textbf{\AuthorB}: implementace Perlinova šumu, animace, paralelizace, optimalizace, dokumentace
 \end{itemize}
 
 %---------------------------------------------------------------------------
@@ -206,12 +194,14 @@ Implementace navazující textury interpolací krajních bodů přes okraj.
 % \paragraph{Rozsah:} 5-10 řádků
 
 \begin{itemize}
-\item \textbf{\AuthorA}: Sestavit scénu a nastavit její parametry tak,
-aby výstup alespoň trochu připomínal realitu.
+\item \textbf{\AuthorA}: Sestavit scénu a~nastavit její parametry tak,
+aby výstup alespoň trochu připomínal realitu. Jelikož jsem sledování
+paprsku implementoval poprvé, bylo pro mě poměrně časově náročné jej
+odladit.
 \item \textbf{\AuthorB}: Najít vhodné parametry pro funkci, která generuje
 Perlinův šum, aby výsledek nevypadal jako jediný mrak přes celou oblohu,
 ale aby vznikala i místa, kterými prosvítá obloha. Problém totiž byl, že vyšší
-frekvence v Perlinově šumu byly příliš utlumeny a neměly tak dostatečný vliv
+frekvence v~Perlinově šumu byly příliš utlumeny a~neměly tak dostatečný vliv
 na podobu výsledného signálu.
 \end{itemize}
 
@@ -224,9 +214,9 @@ jsem se základy matematiky, která se v~této oblasti
 používá (barycentrické souřadnice, výpočty průsečíků apod.). Vyzkoušel
 jsem si modelování reálné přírodní scény, což jsem dosud ve škole sám
 nedělal.
-\item \textbf{\AuthorB}: Seznámil jsem se s problematikou generování
-procedurálních textur a jejich mapování do scény. Vyzkoušeli jsme si
-řešení konfliktů v systému GIT. Naučil jsem se pracovat s knihovnou SDL.
+\item \textbf{\AuthorB}: Seznámil jsem se s~problematikou generování
+procedurálních textur a~jejich mapování do scény. Vyzkoušeli jsme si
+řešení konfliktů v~systému GIT. Naučil jsem se pracovat s~knihovnou SDL.
 \end{itemize}
 
 % \paragraph{Rozsah:} formulujte stručně, uchopte cca 3-5 věcí
@@ -239,7 +229,7 @@ Klíčové metody a~prostředky jsme si ujasnili před začátkem implementace
 poté, co jsme projekt konzultovali. Některé věci, jako např.
 supersampling, jsme přidávali až během implementace.
 
-\paragraph{Programování (70\%):}
+\paragraph{Programování (60\%):}
 Kód jsme se snažili psát alespoň minimálně přehledně, objektově,
 modulárně a~komentovat jej způsobem kompatibilním se systémy
 pro automatické generování dokumentace. Bylo by možné
@@ -247,23 +237,24 @@ dosáhnout podstatně kvalitnějšího kódu, to však nebylo naším primární
 cílem.
 
 \paragraph{Vzhled vytvořeného řešení (90\%):}
-Vizuální výsledky hodnotíme s~ohledem na pracovní podmínky zdařile.
-Nedokonalosti v~obrázcích jsou znát např. na mracích, pro lepší výsledky
-by bylo možné použít lepší druh šumu (např. simplex noise).
+S~vizuálními výsledky jsme spokojeni s~ohledem na čas, který jsme na
+vypracování projektu měli. Nedokonalosti v~obrázcích jsou znát např.
+na mracích, pro lepší výsledky by bylo možné použít lepší druh šumu
+(např. simplex noise).
 
-\paragraph{Využití zdrojů (80\%):}
+\paragraph{Využití zdrojů (85\%):}
 Využili jsme kód pro práci s~rastrovou grafikou a~formátem PNG napsaný v~rámci
-bakalářské práce. Metody jsme zvolili na základě konzultace a~studia
-literatury.
+bakalářské práce. Dále jsme využili knihovnu SDL2 a~LodePNG. Metody jsme zvolili na
+základě konzultace a~studia literatury.
 
 \paragraph{Hospodaření s časem (90\%):}
 Pracovat jsme začali ihned po zadání, pokračovali jsme rovnoměrně.
 
-\paragraph{Spolupráce v týmu (80\%):}
-Snažili jsme se pracovat průběžně a práci každý týden konzultovat. Pro
+\paragraph{Spolupráce v týmu (90\%):}
+Snažili jsme se pracovat průběžně a~práci každý týden konzultovat. Pro
 správu kódu jsme využili systém GIT.
 
-\paragraph{Celkový dojem (90\%):}
+\paragraph{Celkový dojem (95\%):}
 Zadání bylo podle nás z~programátorského hlediska průměrně náročné, ale
 mělo navíc umělecký aspekt, se kterým se na škole příliš nesetkáváme,
 proto jsme se díky projektu hodně naučili. Výsledný program je podle
@@ -279,12 +270,10 @@ Projekt využívá tyto technologie:
 \begin{itemize}
 \item jazyk C++
 \item překladač gcc
-\item knihovna LodePNG
 \item pro animaci knihovna SDL2
 \end{itemize}
 
-Program je možné přeložit a~spustit na platformách, které mají C++
-překladač.
+Program je možné přeložit a~spustit na platformách s~C++ překladačem.
 
 \section{Obsluha programu}
 
