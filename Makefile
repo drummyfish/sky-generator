@@ -18,6 +18,7 @@ endif
 all: $(BIN) $(ANIMBIN)
 
 $(BIN): $(OBJFILES)
+	$(CXX) $(CXXFLAGS) $^ -o $@
 
 $(ANIMBIN): $(SRCDIR)/anim.o $(SRCDIR)/colorbuffer.o $(SRCDIR)/lodepng.o $(SRCDIR)/perlin.o $(SRCDIR)/raytracing.o $(SRCDIR)/skyrenderer.o
 	$(CXX) $(CXXFLAGS) -lSDL2 $^ -o $@
